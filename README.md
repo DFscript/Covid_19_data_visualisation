@@ -1,4 +1,6 @@
-# Covid_19_data_visualisation
+![Banner](wirvsvirus-banner.jpg)
+
+# WIRvsVIRUS Hackathon - Welcome!
 Goal: Improve covid 19 data transparency for better decision making. <br>
 Project initiated by: https://wirvsvirushackathon.org/
 
