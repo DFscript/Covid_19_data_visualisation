@@ -2,7 +2,7 @@
 
 # WIRvsVIRUS Hackathon - Welcome!
 Goal: Improve covid 19 data transparency for better decision making. <br>
-Project initiated by: https://wirvsvirushackathon.org/
+Project initiated by: https://wirvsvirushackathon.org/ #WIRVSVIRUS
 
 # Vision
 The vision of this project is to display the development of Covid19 cases and the effect of measures taken.
