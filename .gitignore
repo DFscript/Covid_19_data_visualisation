@@ -1,0 +1,7 @@
+*.csv
+*.xlsx
+*.pdf
+*/*.zipx
+*/*.txt
+*/*.csv
+.vscode
