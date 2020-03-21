@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
+    df_cases = pd.read_excel(r'Covid_19_data_visualisation/data-cases/cases.xlsx')
 
     return df_cases
 
@@ -40,7 +40,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
