@@ -6,6 +6,8 @@ import pandas as pd
 import plotly.graph_objs as go
 import os
 from random import randrange
+from datetime import datetime
+
 
 
 external_stylesheets = ['assetes/external_sytlesheet.css']
@@ -31,7 +33,7 @@ def clean_data(df):
 
 def create_timeline():
     start = '2/1/2020' #TODO replace with first date in our data
-    end = '3/21/2020' #TODO replace with current date
+    end = datetime.today().strftime('%Y-%m-%d')
     date_list = pd.date_range(start=start, end =end)
     date_list =[str(date)[:10] for date in date_list]
     return date_list
