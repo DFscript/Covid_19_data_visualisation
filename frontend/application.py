@@ -17,20 +17,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.scripts.config.serve_locally=True
 
-def clean_data(df):
-    '''
-    Clean the data e.g. drop na
-    '''
-    df =  df[df['timestamp'].notna()] #drop na in column timestamp for action csv
-    return df
 
-# def read_data():
-#     '''
-#     load the data
-#     '''
-#     # df_cases = pd.read_csv(path_cases,sep = ',')
-#     df_actions = clean_data(pd.read_csv(os.path.join("../data-actions", "policymeasures - measures_taken.csv")))
-#     return df_actions
+
+def read_cases_data():
+    '''
+    load the data
+    '''
+    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
+    return df_cases
 
 def create_15_days(start_date):
     date_list = pd.date_range(start=start_date, end=start_date+15)
@@ -38,15 +32,15 @@ def create_15_days(start_date):
     return date_list
 
 def create_timeline():
+    df = read_cases_data()
     start = '2/1/2020' #TODO replace with first date in our data
     end = datetime.today().strftime('%Y-%m-%d')
     date_list = pd.date_range(start=start, end =end)
-    # date_list =[str(date)[:10] for date in date_list]
     return date_list
 
 def read_action_data():
 
-    df = pd.read_csv(r'data-actions\policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -57,51 +51,72 @@ def read_action_data():
     return df
 
 def build_bar_chart_data():
-    x = create_timeline() # the time line we want to show
-    y = [randrange(10) for i in range(len(x))] # replace with actual cases
-    data = go.Bar(
-        x=x,
-        y=y,
-    )
-    return data
+    df = read_cases_data()
+    # x = create_timeline() # the time line we want to show
+    bar_charts =[]
+    color = ['#B3B3B3','#171717']
+
+    for i,land in enumerate(['NRW','Bayern']):
+        x= df['Time']
+        y=df[land]
+        # y = [randrange(10) for i in range(len(x))] # replace with actual cases
+        data = go.Bar(
+            x=x,
+            y=y,
+            name = land,
+            marker_color = color[i]
+        )
+        bar_charts.append(data)
+    return bar_charts
 
 def build_am_data():
-    action_data = read_action_data()
-    action_data  = action_data.sort_values("startdate_action")
-    data = [go.Scatter(x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
-                       y=[-1*row_num,-1*row_num],
-                       marker={"size": 16,
-                              "symbol": "triangle-up",
-                              "color":"green"},
-                       mode="lines+markers+text",
-                       text=["Anordnung - {0}".format(action["action"]), "mögl. Effekt"],
+    df = read_cases_data()
+    max_cases = max(df['NRW'])/len(df)
 
-                       textposition="bottom center"
-                       )
-            for row_num, action in action_data.iterrows()]
+    action_data = read_action_data()
+    action_data = action_data.sort_values("startdate_action")
+    data = []
+    for row_num, action in action_data.iterrows():
+        y = [-max_cases*(row_num+1),-max_cases*(row_num+1)]
+        x = [action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')]
+        data.append(go.Scatter(x=x,
+                   y=y,
+                   marker={"size": 16,
+                           "symbol": "square",
+                           "color": "black"
+                           },
+                   mode="lines+markers+text",
+                   text=["Anordnung - {0}".format(action["action"]), "mögl. Effekt ab hier"],
+
+                   textposition="bottom center"
+                   ))
+
     return data
 
-# def create_action_marker_chart():
-#     am_data = build_am_data()
-#     am_layout = go.Layout(xaxis=dict(title="time", type="category"),
-#                           yaxis=dict(title="measures", type="category"),
-#                           showlegend=False)
-#     am_fig = go.Figure(data=am_data, layout=am_layout)
-#     am_chart = dcc.Graph(id='actions', figure=am_fig)
-#     return am_chart
+def create_action_marker_chart():
+    am_data = build_am_data()
+    am_layout = go.Layout(xaxis=dict(title="time", type="category"),
+                          yaxis=dict(title="measures", type="category"),
+                          showlegend=False)
+    am_fig = go.Figure(data=am_data, layout=am_layout)
+    am_chart = dcc.Graph(id='actions', figure=am_fig)
+    return am_chart
 
-# def create_bar_chart():
-#     bar_data = build_bar_chart_data()
-#     count_days = len(bar_data.x)
-#     focus = 16 #TODO make the zoom interactively
-#     bar_layout = go.Layout(
-#         xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
-#         ,yaxis=dict(title="Number of cases"))
-#
-#     bar_fig = go.Figure(data=bar_data, layout=bar_layout)
-#     bar_fig.update_xaxes(tickangle=90)
-#     bar_chart = dcc.Graph(id= 'Timeline', figure=bar_fig)
-#     return bar_chart
+def create_bar_chart():
+    bar_data = build_bar_chart_data()
+    bar_layout = go.Layout(
+        xaxis=dict(
+            # tickmode='linear',
+    showgrid = False,
+               ticks = '',
+                       showticklabels = False
+                   ) # range is the initial zoom on 16 days with the possibility to zoom out
+        ,yaxis=dict(title="Number of cases"))
+
+    bar_fig = go.Figure(data=bar_data, layout=bar_layout)
+    bar_fig.update_xaxes(tickangle=90)
+    bar_chart = dcc.Graph(id= 'bar_chart', figure=bar_fig)
+    return bar_chart
 
 def merge_figures():
     '''
@@ -110,13 +125,18 @@ def merge_figures():
     fig = go.Figure()
     am_figure = build_am_data()
     bar_figure = build_bar_chart_data()
-    count_days = len(bar_figure.x)
-    focus = 16 #TODO make the zoom interactively
     for am in am_figure:
         fig.add_trace(am)
-    fig.add_trace(bar_figure)
+    for bar in bar_figure:
+        fig.add_trace(bar)
+
+    for trace in fig['data']:
+        if (trace['name'] == 'trace10'): trace['showlegend'] = False
+
     fig.update_xaxes(tickangle=90)
     fig.update_layout(
+        barmode='group',
+        plot_bgcolor ='white',
         xaxis=dict(
             tickmode='linear',
                    # range=[count_days-focus,count_days]
@@ -132,8 +152,28 @@ def normalize_data():
     :return:
     '''
 
-# bar_chart = create_bar_chart()
-# am_chart = create_action_marker_chart()
+dropdown_bundesland = dcc.Dropdown(
+        id='bundesland',
+        options=[
+            {'label': 'NRW', 'value': 'NRW'},
+            {'label': 'Bayern', 'value': 'Bayern'},
+        ],
+        value='NRW',
+    multi=True
+    )
+
+dropdown_landkreis = dcc.Dropdown(
+        id='landkreis',
+        options=[
+            {'label': 'Köln', 'value': 'Köln'},
+            {'label': 'Aachen', 'value': 'Aachen'},
+        ],
+        value='Köln',
+    multi=True
+    )
+
+bar_chart = create_bar_chart()
+am_chart = create_action_marker_chart()
 plot = merge_figures()
 
 app.layout = html.Div(children=[
@@ -142,6 +182,8 @@ app.layout = html.Div(children=[
     '''),
     # bar_chart,
     # am_chart
+   dropdown_bundesland,
+    dropdown_landkreis,
     plot
 
 ])
