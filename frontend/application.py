@@ -15,37 +15,23 @@ app.scripts.config.serve_locally=True
 
 
 def create_figure():
-    # germany = create_germany()
-    # Acquire countries
-    # import urllib.request, json
-    # with urllib.request.urlopen("http://maps.googleapis.com/maps/api/geocode/json?address=google") as url:
-    #     data = json.loads(url.read().decode())
-    #     print(data)
-
-    # Load cases
-    with open('../data-cases/RKI_GeoCoords.json') as json_file:
-        data_geo_coords = json.load(json_file)
-
-    county_to_polygons = {}
-
-    for feature in data_geo_coords['features']:
-        attributes = feature['attributes']
-        county = attributes['county']
-        polygons = feature['geometry']['rings']
-
-        county_to_polygons[county] = polygons
+    with open('../data-cases/middles_per_county.json') as json_file:
+        county_to_middles = json.load(json_file)
 
     with open('../data-cases/RKI_COVID19.geojson') as json_file:
         data_cases = json.load(json_file)
 
+    elements_to_remove = []
+    case_list = []
     for element in data_cases['features']:
         props = element['properties']
         county = props['Landkreis']
 
-        if county not in county_to_polygons:
-            print("Fuck!:", county)
-
-
+        if county not in county_to_middles:
+            print("We have no geocoords for:", county, "therefore throwing out")
+            elements_to_remove.append(element)
+        else:
+            case_list.append(props)
 
     import plotly.express as px
     df = px.data.gapminder()
