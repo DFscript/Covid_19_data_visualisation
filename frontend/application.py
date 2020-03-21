@@ -46,7 +46,7 @@ def create_timeline():
 
 def read_action_data():
 
-    df = pd.read_csv(r"data-actions/policymeasures - measures_taken.csv")
+    df = pd.read_csv(r'data-actions\policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -69,7 +69,7 @@ def build_am_data():
     action_data = read_action_data()
     action_data  = action_data.sort_values("startdate_action")
     data = [go.Scatter(x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
-                       y=[row_num,row_num],
+                       y=[-1*row_num,-1*row_num],
                        marker={"size": 16,
                               "symbol": "triangle-up",
                               "color":"green"},
@@ -117,8 +117,11 @@ def merge_figures():
     fig.add_trace(bar_figure)
     fig.update_xaxes(tickangle=90)
     fig.update_layout(
-        xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
-        ,yaxis=dict(title="Number of cases"))
+        xaxis=dict(
+            tickmode='linear',
+                   # range=[count_days-focus,count_days]
+        ), # range is the initial zoom on 16 days with the possibility to zoom out
+        yaxis=dict(title="Number of cases"))
     graph = dcc.Graph(id= 'Timeline', figure=fig)
     return graph
 
