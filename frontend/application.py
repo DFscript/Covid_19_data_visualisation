@@ -30,7 +30,7 @@ def read_data():
     return df_actions
 
 def create_timeline():
-    numdays = 8 #TODO make numdays interactive input
+    numdays = 40 #TODO make numdays interactive input
     date_list = pd.date_range(start='1/3/2020', periods=numdays)
     return date_list
 
@@ -43,14 +43,14 @@ def build_bar_chart_data():
         x=x,
         y=y,
     )
+    return data
 
 def create_bar_chart():
     bar_data = build_bar_chart_data()
-    bar_layout = go.Layout(plot_bgcolor="#ffffff ",
-                           yaxis=dict(title="Number of cases"))
+    bar_layout = go.Layout(yaxis=dict(title="Number of cases"))
 
     bar_fig = go.Figure(data=bar_data, layout=bar_layout)
-    bar_chart = dcc.Graph(id="", figure=bar_fig)
+    bar_chart = dcc.Graph(id= 'timeline', figure=bar_fig)
     return bar_chart
 
 def normalize_data():
