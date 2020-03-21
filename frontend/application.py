@@ -44,7 +44,7 @@ def build_bar_chart_data():
     return data
 
 def build_am_data():
-    data = go.Scatter(x=[0,16], y=[-1,-1],
+    data = [go.Scatter(x=[i*2+0,i*2+16], y=[-i,-i],
                       marker={"size": 32,
                             "symbol": "triangle-up"},
                       mode="lines+markers+text",
@@ -53,6 +53,7 @@ def build_am_data():
 
                       textposition="bottom center"
                       )
+            for i in range(5)]
     return data
 
 def create_action_marker_chart():
