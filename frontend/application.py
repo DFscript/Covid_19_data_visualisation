@@ -37,18 +37,31 @@ def create_figure():
 
     rows = []
     for index, case in enumerate(case_list):
-        county_id = case['IdLandkreis']
-        lat, lon = tuple(county_to_middles[county_id])
+        county = case['Landkreis']
+        country = case['Bundesland']
+        lat, lon = tuple(county_to_middles[case['IdLandkreis']])
         infected = case['AnzahlFall']
         timestamp = case['Meldedatum']
         deaths = case['AnzahlTodesfall']
-        rows.append([county_id, lat, lon, infected, timestamp, deaths])
+        rows.append([country, county, lat, lon, infected, timestamp, deaths])
 
-    df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
+    df = pd.DataFrame(data=rows, columns=['country', 'county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
     # df['timestamp'] = pd.to_datetime(df['timestamp'])
+    # Make it so that ('county', 'timestamp') are unique and sum up deaths and infected while doing so
+    df = df.groupby(by=['timestamp', 'county', 'lat', 'lon', 'country'])[['deaths', 'infected']].sum().reset_index().\
+        sort_values(by=['county', 'timestamp'], ascending=[True, True])
+    # df.to_csv('data_set.csv', index=False)
+
+    df[['deaths', 'infected']] = df.groupby(by=['county'])[['deaths', 'infected']].cumsum()
+
+    # df.to_csv('data_set_accumulated.csv', index=False)
+
+    df = df.sort_values(by=['county', 'timestamp'], ascending=[True, False])
 
     # Cut off time
     df['timestamp'] = df['timestamp'].str.split('T').str[0]
+
+    df = df.sort_values(by='timestamp')
 
     fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
                             animation_frame='timestamp')
