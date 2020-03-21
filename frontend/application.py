@@ -5,6 +5,7 @@ import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
 import os
+from random import randrange
 
 
 external_stylesheets = ['assetes/external_sytlesheet.css']
@@ -17,7 +18,7 @@ def clean_data(df):
     '''
     Clean the data e.g. drop na
     '''
-    df =  df[df['timestamp'].notna()] #drop na in column timestamp
+    df =  df[df['timestamp'].notna()] #drop na in column timestamp for action csv
     return df
 
 # def read_data():
@@ -29,16 +30,15 @@ def clean_data(df):
 #     return df_actions
 
 def create_timeline():
-    numdays = 40 #TODO make numdays interactive input
-    date_list = pd.date_range(start='3/1/2020', periods=numdays)
+    start = '2/1/2020' #TODO replace with first date in our data
+    end = '3/21/2020' #TODO replace with current date
+    date_list = pd.date_range(start=start, end =end)
     date_list =[str(date)[:10] for date in date_list]
     return date_list
 
 def build_bar_chart_data():
-    # df_actions= read_data()
     x = create_timeline() # the time line we want to show
-    print(x)
-    y = [3] * len(x)
+    y = [randrange(10) for i in range(len(x))] # replace with actual cases
     data = go.Bar(
         x=x,
         y=y,
@@ -68,7 +68,7 @@ def create_action_marker_chart():
 def create_bar_chart():
     bar_data = build_bar_chart_data()
     count_days = len(bar_data.x)
-    focus = 16
+    focus = 16 #TODO make the zoom interactively
     bar_layout = go.Layout(
         xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
         ,yaxis=dict(title="Number of cases"))
