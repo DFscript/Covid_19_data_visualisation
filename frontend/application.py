@@ -17,8 +17,7 @@ app.scripts.config.serve_locally=True
 
 
 def create_figure():
-    print(os.getcwd())
-    with open('../data-cases/middles_per_county.json') as json_file:
+    with open('./county_centers/landkreise_marker.json') as json_file:
         county_to_middles = json.load(json_file)
 
     with open('../data-cases/RKI_COVID19.geojson') as json_file:
@@ -28,22 +27,22 @@ def create_figure():
     case_list = []
     for element in data_cases['features']:
         props = element['properties']
-        county = props['Landkreis']
+        county_id = props['IdLandkreis']
 
-        if county not in county_to_middles:
-            print("We have no geocoords for:", county, "therefore throwing out")
+        if county_id not in county_to_middles:
+            print("We have no geocoords for:", county_id, "therefore throwing out")
             elements_to_remove.append(element)
         else:
             case_list.append(props)
 
     rows = []
     for index, case in enumerate(case_list):
-        county = case['Landkreis']
-        lat, lon = tuple(county_to_middles[county])
+        county_id = case['IdLandkreis']
+        lat, lon = tuple(county_to_middles[county_id])
         infected = case['AnzahlFall']
         timestamp = case['Meldedatum']
         deaths = case['AnzahlTodesfall']
-        rows.append([county, lat, lon, infected, timestamp, deaths])
+        rows.append([county_id, lat, lon, infected, timestamp, deaths])
 
     df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
     # df['timestamp'] = pd.to_datetime(df['timestamp'])
