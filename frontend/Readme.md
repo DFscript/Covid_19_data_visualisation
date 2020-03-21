@@ -5,6 +5,6 @@
 2) start your docker with:
 
 ```
-docker build -t frontend:latest .
-docker run -d -p 8050:8050 frontend
+sudo docker build -t frontend:latest .
+sudo docker run -d -p 8050:8050 frontend
 ```
