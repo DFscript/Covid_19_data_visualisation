@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -13,8 +15,25 @@ app.scripts.config.serve_locally=True
 
 
 def create_figure():
-    germany = create_germany()
-    return germany
+    # germany = create_germany()
+    # Acquire countries
+    # import urllib.request, json
+    # with urllib.request.urlopen("http://maps.googleapis.com/maps/api/geocode/json?address=google") as url:
+    #     data = json.loads(url.read().decode())
+    #     print(data)
+
+    # Load cases
+    with open('../data-cases/RKI_COVID19.geojson') as json_file:
+        data = json.load(json_file)
+        print(data)
+
+    import plotly.express as px
+    df = px.data.gapminder()
+    fig = px.scatter_geo(df, locations="iso_alpha", color="continent",
+                         hover_name="country", size="pop",
+                         animation_frame="year",
+                         projection="natural earth")
+    return fig
 
 
 app.layout = html.Div(children=[
