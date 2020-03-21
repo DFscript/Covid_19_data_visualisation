@@ -24,7 +24,7 @@ for item in data["features"]:
 			if p[0] < x0:
 				x0 = p[0]
 			if p[0] > x1:
-				x1 = p[1]
+				x1 = p[0]
 			if p[1] < y0:
 				y0 = p[1]
 			if p[1] > y1:
