@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(r'\data-cases\cases.xlsx')
+    df_cases = pd.read_excel(os.path.normpath(r'data-cases/cases.xlsx'))
     return df_cases
 
 def create_15_days(start_date):
@@ -39,7 +39,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
+    df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
