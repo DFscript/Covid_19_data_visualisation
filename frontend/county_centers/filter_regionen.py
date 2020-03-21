@@ -19,3 +19,24 @@ for item in data:
 
 with open('landkreise_marker.json', 'w') as fid:
 	json.dump(result, fid, ensure_ascii=False)
+
+
+
+
+
+# https://public.opendatasoft.com/explore/dataset/landkreise-in-germany/export/
+
+with open('bundesland.json', 'r') as fid:
+	data = json.load(fid)
+
+result = {}
+
+for item in data:
+
+	id = item["fields"]["gen"]
+	p = item["fields"]["geo_point_2d"]
+
+	result[id] = p
+
+with open('bundeslaender_marker.json', 'w') as fid:
+	json.dump(result, fid, ensure_ascii=False)
