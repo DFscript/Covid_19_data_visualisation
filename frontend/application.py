@@ -99,31 +99,6 @@ def build_am_data():
             ]
     return data
 
-def create_action_marker_chart():
-    am_data = build_am_data()
-    am_layout = go.Layout(xaxis=dict(title="time", type="category"),
-                          yaxis=dict(title="measures", type="category"),
-                          showlegend=False)
-    am_fig = go.Figure(data=am_data, layout=am_layout)
-    am_chart = dcc.Graph(id='actions', figure=am_fig)
-    return am_chart
-
-def create_bar_chart():
-    bar_data = build_bar_chart_data()
-    bar_layout = go.Layout(
-        xaxis=dict(
-            # tickmode='linear',
-    showgrid = False,
-               ticks = '',
-                       showticklabels = False
-                   ) # range is the initial zoom on 16 days with the possibility to zoom out
-        ,yaxis=dict(title="Number of cases"))
-
-    bar_fig = go.Figure(data=bar_data, layout=bar_layout)
-    bar_fig.update_xaxes(tickangle=90)
-    bar_chart = dcc.Graph(id= 'bar_chart', figure=bar_fig)
-    return bar_chart
-
 def merge_figures():
     '''
     Merge the plots with add trace
@@ -178,16 +153,13 @@ dropdown_landkreis = dcc.Dropdown(
     multi=True
     )
 
-bar_chart = create_bar_chart()
-am_chart = create_action_marker_chart()
 plot = merge_figures()
 
 app.layout = html.Div(children=[
     html.H1(children='''
     Timeline of Events in Germany
     '''),
-    # bar_chart,
-    # am_chart
+
    dropdown_bundesland,
     dropdown_landkreis,
     plot
