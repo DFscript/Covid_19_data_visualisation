@@ -23,9 +23,29 @@ def create_figure():
     #     print(data)
 
     # Load cases
+    with open('../data-cases/RKI_GeoCoords.json') as json_file:
+        data_geo_coords = json.load(json_file)
+
+    county_to_polygons = {}
+
+    for feature in data_geo_coords['features']:
+        attributes = feature['attributes']
+        county = attributes['county']
+        polygons = feature['geometry']['rings']
+
+        county_to_polygons[county] = polygons
+
     with open('../data-cases/RKI_COVID19.geojson') as json_file:
-        data = json.load(json_file)
-        print(data)
+        data_cases = json.load(json_file)
+
+    for element in data_cases['features']:
+        props = element['properties']
+        county = props['Landkreis']
+
+        if county not in county_to_polygons:
+            print("Fuck!:", county)
+
+
 
     import plotly.express as px
     df = px.data.gapminder()
