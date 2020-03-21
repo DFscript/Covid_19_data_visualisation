@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import os
 
 import numpy as np
 import dash
@@ -16,10 +17,11 @@ app.scripts.config.serve_locally=True
 
 
 def create_figure():
-    with open('data-cases/middles_per_county.json') as json_file:
+    print(os.getcwd())
+    with open('../data-cases/middles_per_county.json') as json_file:
         county_to_middles = json.load(json_file)
 
-    with open('data-cases/RKI_COVID19.geojson') as json_file:
+    with open('../data-cases/RKI_COVID19.geojson') as json_file:
         data_cases = json.load(json_file)
 
     elements_to_remove = []
