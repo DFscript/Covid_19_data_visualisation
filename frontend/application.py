@@ -46,7 +46,7 @@ def create_timeline():
 
 def read_action_data():
 
-    df = pd.read_csv(r'data-actions\policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -65,20 +65,32 @@ def build_bar_chart_data():
     )
     return data
 
+am_hover_template = """
+<b>%{{text}}</b><br>
+{details_action}
+<extra></extra>
+"""
+
 def build_am_data():
     action_data = read_action_data()
-    action_data  = action_data.sort_values("startdate_action")
-    data = [go.Scatter(x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
-                       y=[-1*row_num,-1*row_num],
-                       marker={"size": 16,
-                              "symbol": "triangle-up",
-                              "color":"green"},
-                       mode="lines+markers+text",
-                       text=["Anordnung - {0}".format(action["action"]), "mögl. Effekt"],
-
-                       textposition="bottom center"
-                       )
-            for row_num, action in action_data.iterrows()]
+    action_data = action_data.sort_values("startdate_action")
+    for row_num, action in action_data.iterrows():
+        print([action["action"],] * 2)
+        break
+    data = [go.Scatter(
+                    x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
+                    y=[-1*row_num,-1*row_num],
+                    marker={"size": 16,
+                            "symbol": "triangle-down",
+                            "color":"green"},
+                    mode="lines+markers+text",
+                    name=action["action"],
+                    hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
+                    text=[action["action"], "mögl. Effekt"],
+                    textposition="bottom center",
+                    )
+                for row_num, action in action_data.iterrows()
+            ]
     return data
 
 # def create_action_marker_chart():
