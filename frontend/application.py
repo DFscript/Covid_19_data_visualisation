@@ -81,10 +81,29 @@ def build_am_data():
 
     action_data = read_action_data()
     action_data = action_data.sort_values("startdate_action")
-    for row_num, action in action_data.iterrows():
-        print([action["action"],] * 2)
-        break
+
+    # grey lines at start of the action.
     data = [go.Scatter(
+                x=[action["startdate_action"], action["startdate_action"]],
+                y=[max_cases * row_num, 0],
+                mode="lines",
+                line=dict(color="rgb(200,200,200)"),
+                )
+                for row_num, action in action_data.iterrows()
+            ]
+    # grey lines at point of effect of the action.
+    data += [go.Scatter(
+                x=[action["startdate_action"]+np.timedelta64(15, 'D'),
+                  action["startdate_action"]+np.timedelta64(15, 'D')],
+                y=[max_cases * row_num, 0],
+                mode="lines",
+                line=dict(color="rgb(200,200,200)"),
+                )
+                for row_num, action in action_data.iterrows()
+            ]
+
+    # The actual action markers
+    data += [go.Scatter(
                     x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
                     y=[max_cases*row_num,max_cases*row_num],
                     marker={"size": 16,
