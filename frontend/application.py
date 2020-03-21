@@ -61,6 +61,7 @@ def create_figure():
     # Cut off time
     df['timestamp'] = df['timestamp'].str.split('T').str[0]
 
+    # Needed to have time slider values sorted
     df = df.sort_values(by='timestamp')
 
     fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
