@@ -3,6 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
+import numpy as np
 import plotly.graph_objs as go
 import os
 from random import randrange
@@ -28,6 +29,10 @@ def clean_data(df):
 #     # df_cases = pd.read_csv(path_cases,sep = ',')
 #     df_actions = clean_data(pd.read_csv(os.path.join("../data-actions", "policymeasures - measures_taken.csv")))
 #     return df_actions
+def create_15_days(start_date):
+    date_list = pd.date_range(start=start_date, end=start_date+15)
+    date_list = [str(date)[:10] for date in date_list]
+    return date_list
 
 def create_timeline():
     start = '2/1/2020' #TODO replace with first date in our data
@@ -38,9 +43,13 @@ def create_timeline():
 
 def read_action_data():
     df = pd.read_csv("data-actions/policymeasures - measures_taken.csv")
-
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
-    df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"])
+    df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
+
+    # convert columns to datetime which contain datetime.
+    df["startdate_action"] = pd.to_datetime(df["startdate_action"])
+    df["enddate_action"] = pd.to_datetime(df["enddate_action"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
 
 def build_bar_chart_data():
@@ -53,22 +62,26 @@ def build_bar_chart_data():
     return data
 
 def build_am_data():
-    data = [go.Scatter(x=[i*2+0,i*2+16], y=[-i,-i],
-                      marker={"size": 32,
-                            "symbol": "triangle-up"},
-                      mode="lines+markers+text",
-                      name="Kinos schließen",
-                      text=["Anordnung Kinos schließen", "mögl. Effekt"],
+    action_data = read_action_data()
+    action_data.sort_values("startdate_action")
+    data = [go.Scatter(x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
+                       y=[row_num,row_num],
+                       marker={"size": 16,
+                              "symbol": "triangle-up",
+                              "color":"green"},
+                       mode="lines+markers+text",
+                       text=["Anordnung - {0}".format(action["action"]), "mögl. Effekt"],
 
-                      textposition="bottom center"
-                      )
-            for i in range(5)]
+                       textposition="bottom center"
+                       )
+            for row_num, action in action_data.iterrows()]
     return data
 
 def create_action_marker_chart():
     am_data = build_am_data()
     am_layout = go.Layout(xaxis=dict(title="measures", type="category"),
-                          yaxis=dict(title="time", type="category"))
+                          yaxis=dict(title="time", type="category"),
+                          showlegend=False)
     am_figure = go.Figure(data=am_data, layout=am_layout)
     am_chart = dcc.Graph(id='actions', figure=am_figure)
     return am_chart
