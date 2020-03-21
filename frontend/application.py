@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
+    df_cases = pd.read_excel(r'\data-cases\cases.xlsx')
     return df_cases
 
 def create_15_days(start_date):
@@ -39,8 +39,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-
-    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -69,28 +68,35 @@ def build_bar_chart_data():
         bar_charts.append(data)
     return bar_charts
 
+am_hover_template = """
+<b>%{{text}}</b><br>
+{details_action}
+<extra></extra>
+"""
+
 def build_am_data():
     df = read_cases_data()
     max_cases = max(df['NRW'])/len(df)
 
     action_data = read_action_data()
     action_data = action_data.sort_values("startdate_action")
-    data = []
     for row_num, action in action_data.iterrows():
-        y = [-max_cases*(row_num+1),-max_cases*(row_num+1)]
-        x = [action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')]
-        data.append(go.Scatter(x=x,
-                   y=y,
-                   marker={"size": 16,
-                           "symbol": "square",
-                           "color": "black"
-                           },
-                   mode="lines+markers+text",
-                   text=["Anordnung - {0}".format(action["action"]), "mögl. Effekt ab hier"],
-
-                   textposition="bottom center"
-                   ))
-
+        print([action["action"],] * 2)
+        break
+    data = [go.Scatter(
+                    x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
+                    y=[-1*row_num,-1*row_num],
+                    marker={"size": 16,
+                            "symbol": "triangle-down",
+                            "color":"green"},
+                    mode="lines+markers+text",
+                    name=action["action"],
+                    hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
+                    text=[action["action"], "mögl. Effekt"],
+                    textposition="bottom center",
+                    )
+                for row_num, action in action_data.iterrows()
+            ]
     return data
 
 def create_action_marker_chart():
