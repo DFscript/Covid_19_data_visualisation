@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 
+import numpy as np
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -33,11 +34,18 @@ def create_figure():
         else:
             case_list.append(props)
 
-    import plotly.express as px
-    df = px.data.gapminder()
-    fig = px.scatter_geo(df, locations="iso_alpha", color="continent",
-                         hover_name="country", size="pop",
-                         animation_frame="year",
+    rows = []
+    for index, case in enumerate(case_list):
+        county = case['Landkreis']
+        lat, lon = tuple(county_to_middles[county])
+        infected = case['AnzahlFall']
+        timestamp = case['Meldedatum']
+        rows.append([county, lat, lon, infected, timestamp])
+
+    df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp'])
+
+    # df = px.data.gapminder()
+    fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
                          projection="natural earth")
     return fig
 
