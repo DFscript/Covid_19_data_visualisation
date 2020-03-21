@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(os.path.normpath(r'data-cases/cases.xlsx'))
+    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
 
     return df_cases
 
@@ -40,7 +40,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-    df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
+    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -132,6 +132,16 @@ def build_am_data():
                     )
                 for row_num, action in action_data.iterrows() if action["enddate_action"]
             ]
+    data += [go.Scatter(
+                    x=[action["startdate_action"]+np.timedelta64(15, 'D'),
+                       action["enddate_action"]+np.timedelta64(15, 'D')],
+                    y=[max_cases*row_num,max_cases*row_num],
+                    marker={"color":"green"},
+                    mode="lines",
+                    )
+                for row_num, action in action_data.iterrows() if action["enddate_action"]
+            ]
+
     return data
 
 def merge_figures():
@@ -143,8 +153,8 @@ def merge_figures():
     bar_figure = build_bar_chart_data()
     for am in am_figure:
         fig.add_trace(am)
-    for bar in bar_figure:
-        fig.add_trace(bar)
+    # for bar in bar_figure:
+    fig.add_trace(bar_figure[0])
 
     for trace in fig['data']:
         if (trace['name'] == 'trace10'): trace['showlegend'] = False
@@ -158,13 +168,14 @@ def merge_figures():
         #     bordercolor="Black",
         #     borderwidth=2
         # ),
+        showlegend=False,
         barmode='group',
         plot_bgcolor ='white',
         xaxis=dict(
             tickmode='linear',
                  # range=[count_days-focus,count_days]
         ), # range is the initial zoom on 16 days with the possibility to zoom out
-        yaxis=dict(title="Number of cases"))
+        yaxis=dict(title="Number of new cases"))
     graph = dcc.Graph(id= 'Timeline', figure=fig)
     return graph
 
