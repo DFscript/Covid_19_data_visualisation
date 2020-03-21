@@ -46,6 +46,9 @@ def create_figure():
     df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
     # df['timestamp'] = pd.to_datetime(df['timestamp'])
 
+    # Cut off time
+    df['timestamp'] = df['timestamp'].str.split('T').str[0]
+
     # Not quite sure but lat and lon where given in * 10e+6
     df['lat'] = df['lat'] * 10e-6
     df['lon'] = df['lon'] * 10e-6
