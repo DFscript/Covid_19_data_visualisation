@@ -44,9 +44,16 @@ def create_figure():
         rows.append([county, lat, lon, infected, timestamp, deaths])
 
     df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    # df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map')
+    # Not quite sure but lat and lon where given in * 10e+6
+    df['lat'] = df['lat'] * 10e-6
+    df['lon'] = df['lon'] * 10e-6
+
+    df_car = px.data.carshare()
+
+    fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
+                            animation_frame='timestamp')
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
     #                      projection="natural earth")
 
