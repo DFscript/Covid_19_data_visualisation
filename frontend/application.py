@@ -43,10 +43,12 @@ def create_figure():
         rows.append([county, lat, lon, infected, timestamp])
 
     df = pd.DataFrame(data=rows, columns=['county', 'lat', 'lon', 'infected', 'timestamp'])
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
 
     # df = px.data.gapminder()
-    fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
-                         projection="natural earth")
+    fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map')
+    # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
+    #                      projection="natural earth")
     return fig
 
 
