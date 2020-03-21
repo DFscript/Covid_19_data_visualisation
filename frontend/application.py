@@ -31,11 +31,13 @@ def clean_data(df):
 def create_timeline():
     numdays = 40 #TODO make numdays interactive input
     date_list = pd.date_range(start='3/1/2020', periods=numdays)
+    date_list =[str(date)[:10] for date in date_list]
     return date_list
 
 def build_bar_chart_data():
     # df_actions= read_data()
     x = create_timeline() # the time line we want to show
+    print(x)
     y = [3] * len(x)
     data = go.Bar(
         x=x,
@@ -66,14 +68,15 @@ def create_action_marker_chart():
 
 def create_bar_chart():
     bar_data = build_bar_chart_data()
-    print(bar_data)
+    count_days = len(bar_data.x)
+    focus = 16
     bar_layout = go.Layout(
-        xaxis=dict(type="category",range=[10,26]) # range is the initial zoom on 16 days with the possibility to zoom out
+        xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
         ,yaxis=dict(title="Number of cases"))
 
     bar_fig = go.Figure(data=bar_data, layout=bar_layout)
     bar_fig.update_xaxes(tickangle=90)
-    bar_chart = dcc.Graph(id= 'timeline', figure=bar_fig)
+    bar_chart = dcc.Graph(id= 'Timeline', figure=bar_fig)
     return bar_chart
 
 def normalize_data():
@@ -95,4 +98,5 @@ app.layout = html.Div(children=[
 ])
 
 if __name__ == '__main__':
+    print('reload')
     app.run_server(host="0.0.0.0", debug=True)
