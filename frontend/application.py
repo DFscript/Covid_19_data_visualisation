@@ -102,13 +102,14 @@ def build_am_data():
                 for row_num, action in action_data.iterrows()
             ]
 
+
     # The actual action markers
     data += [go.Scatter(
                     x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
                     y=[max_cases*row_num,max_cases*row_num],
                     marker={"size": 16,
                             "symbol": "triangle-down",
-                            "color":"green"},
+                            "color":"rgb(220,220,220)"},
                     mode="lines+markers+text",
                     name=action["action"],
                     hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
@@ -116,6 +117,20 @@ def build_am_data():
                     textposition="bottom center",
                     )
                 for row_num, action in action_data.iterrows()
+            ]
+
+    data += [go.Scatter(
+                    x=[action["startdate_action"]+np.timedelta64(15, 'D'),
+                       action["enddate_action"]],
+                    y=[max_cases*row_num,max_cases*row_num],
+                    marker={"size": 16,
+                            "symbol": "triangle-down",
+                            "color":"green"},
+                    mode="lines+markers+text",
+                    text=["", "vorrauss. Ende"],
+                    textposition="bottom center",
+                    )
+                for row_num, action in action_data.iterrows() if action["enddate_action"]
             ]
     return data
 
