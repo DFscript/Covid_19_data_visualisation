@@ -40,11 +40,11 @@ def create_timeline():
     start = '2/1/2020' #TODO replace with first date in our data
     end = datetime.today().strftime('%Y-%m-%d')
     date_list = pd.date_range(start=start, end =end)
-    date_list =[str(date)[:10] for date in date_list]
+    # date_list =[str(date)[:10] for date in date_list]
     return date_list
 
 def read_action_data():
-    df = pd.read_csv("data-actions/policymeasures - measures_taken.csv")
+    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -65,7 +65,7 @@ def build_bar_chart_data():
 
 def build_am_data():
     action_data = read_action_data()
-    action_data.sort_values("startdate_action")
+    action_data  = action_data.sort_values("startdate_action")
     data = [go.Scatter(x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
                        y=[row_num,row_num],
                        marker={"size": 16,
@@ -79,27 +79,47 @@ def build_am_data():
             for row_num, action in action_data.iterrows()]
     return data
 
-def create_action_marker_chart():
-    am_data = build_am_data()
-    am_layout = go.Layout(xaxis=dict(title="measures", type="category"),
-                          yaxis=dict(title="time", type="category"),
-                          showlegend=False)
-    am_figure = go.Figure(data=am_data, layout=am_layout)
-    am_chart = dcc.Graph(id='actions', figure=am_figure)
-    return am_chart
+# def create_action_marker_chart():
+#     am_data = build_am_data()
+#     am_layout = go.Layout(xaxis=dict(title="time", type="category"),
+#                           yaxis=dict(title="measures", type="category"),
+#                           showlegend=False)
+#     am_fig = go.Figure(data=am_data, layout=am_layout)
+#     am_chart = dcc.Graph(id='actions', figure=am_fig)
+#     return am_chart
 
-def create_bar_chart():
-    bar_data = build_bar_chart_data()
-    count_days = len(bar_data.x)
+# def create_bar_chart():
+#     bar_data = build_bar_chart_data()
+#     count_days = len(bar_data.x)
+#     focus = 16 #TODO make the zoom interactively
+#     bar_layout = go.Layout(
+#         xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
+#         ,yaxis=dict(title="Number of cases"))
+#
+#     bar_fig = go.Figure(data=bar_data, layout=bar_layout)
+#     bar_fig.update_xaxes(tickangle=90)
+#     bar_chart = dcc.Graph(id= 'Timeline', figure=bar_fig)
+#     return bar_chart
+
+def merge_figures():
+    '''
+    Merge the plots with add trace
+    '''
+    fig = go.Figure()
+    am_figure = build_am_data()
+    bar_figure = build_bar_chart_data()
+    count_days = len(bar_figure.x)
     focus = 16 #TODO make the zoom interactively
-    bar_layout = go.Layout(
+    for am in am_figure:
+        fig.add_trace(am)
+    fig.add_trace(bar_figure)
+    fig.update_xaxes(tickangle=90)
+    fig.update_layout(
         xaxis=dict(type="category",range=[count_days-focus,count_days]) # range is the initial zoom on 16 days with the possibility to zoom out
         ,yaxis=dict(title="Number of cases"))
+    graph = dcc.Graph(id= 'Timeline', figure=fig)
+    return graph
 
-    bar_fig = go.Figure(data=bar_data, layout=bar_layout)
-    bar_fig.update_xaxes(tickangle=90)
-    bar_chart = dcc.Graph(id= 'Timeline', figure=bar_fig)
-    return bar_chart
 
 def normalize_data():
     '''
@@ -107,15 +127,17 @@ def normalize_data():
     :return:
     '''
 
-bar_chart = create_bar_chart()
-am_chart = create_action_marker_chart()
+# bar_chart = create_bar_chart()
+# am_chart = create_action_marker_chart()
+plot = merge_figures()
 
 app.layout = html.Div(children=[
     html.H1(children='''
     Timeline of Events in Germany
     '''),
-    bar_chart,
-    am_chart
+    # bar_chart,
+    # am_chart
+    plot
 
 ])
 
