@@ -2,7 +2,6 @@
 *.xlsx
 *.pdf
 */*.zipx
-*/*.txt
 */*.csv
 .vscode
 .idea
