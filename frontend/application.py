@@ -5,6 +5,8 @@ import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
 
+
+
  
 external_stylesheets = ['assetes/external_sytlesheet.css']
  
@@ -27,9 +29,15 @@ def read_data():
     df_actions = clean_data(pd.read_csv('data-actions/policymeasures - measures_taken.csv'))
     return df_actions
 
+def create_timeline():
+    numdays = 8 #TODO make numdays interactive input
+    date_list = pd.date_range(start='1/3/2020', periods=numdays)
+    return date_list
+
 def build_bar_chart_data():
-    df_actions = read_data()
-    x = df_actions["timestamp"]
+    # df_actions = read_data()
+    x = create_timeline() # the time line we want to show
+    print(x)
     y = [3] * len(x)
     data = go.Bar(
         x=x,
