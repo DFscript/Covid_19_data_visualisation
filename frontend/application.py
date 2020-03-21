@@ -6,11 +6,11 @@ import pandas as pd
 import plotly.graph_objs as go
 import os
 
- 
+
 external_stylesheets = ['assetes/external_sytlesheet.css']
- 
+
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
- 
+
 app.scripts.config.serve_locally=True
 
 def clean_data(df):
@@ -45,6 +45,26 @@ def build_bar_chart_data():
     )
     return data
 
+def build_am_data():
+    data = go.Scatter(x=[0,16], y=[-1,-1],
+                      marker={"size": 32,
+                            "symbol": "triangle-up"},
+                      mode="lines+markers+text",
+                      name="Kinos schließen",
+                      text=["Anordnung Kinos schließen", "mögl. Effekt"],
+
+                      textposition="bottom center"
+                      )
+    return data
+
+def create_action_marker_chart():
+    am_data = build_am_data()
+    am_layout = go.Layout(xaxis=dict(title="measures", type="category"),
+                          yaxis=dict(title="time", type="category"))
+    am_figure = go.Figure(data=am_data, layout=am_layout)
+    am_chart = dcc.Graph(id='actions', figure=am_figure)
+    return am_chart
+
 def create_bar_chart():
     bar_data = build_bar_chart_data()
     count_days = len(bar_data.x)
@@ -65,15 +85,17 @@ def normalize_data():
     '''
 
 bar_chart = create_bar_chart()
+am_chart = create_action_marker_chart()
 
 app.layout = html.Div(children=[
     html.H1(children='''
     Timeline of Events in Germany
     '''),
-    bar_chart
+    bar_chart,
+    am_chart
 
 ])
- 
+
 if __name__ == '__main__':
     print('reload')
     app.run_server(host="0.0.0.0", debug=True)
