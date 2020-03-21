@@ -5,7 +5,6 @@ import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
 import os
-from pathlib import Path
 
  
 external_stylesheets = ['assetes/external_sytlesheet.css']
@@ -21,14 +20,13 @@ def clean_data(df):
     df =  df[df['timestamp'].notna()] #drop na in column timestamp
     return df
 
-def read_data():
-    '''
-    load the data
-    '''
-    # path_cases = os.path.join("data-cases", "RKI_Corona_Bundesländer.csv")
-    # df_cases = pd.read_csv(path_cases,sep = ',')
-    df_actions = clean_data(pd.read_csv(os.path.join("data-actions","policymeasures - measures_taken.csv")))
-    return df_actions
+# def read_data():
+#     '''
+#     load the data
+#     '''
+#     # df_cases = pd.read_csv(path_cases,sep = ',')
+#     df_actions = clean_data(pd.read_csv(os.path.join("../data-actions", "policymeasures - measures_taken.csv")))
+#     return df_actions
 
 def create_timeline():
     numdays = 40 #TODO make numdays interactive input
@@ -36,10 +34,8 @@ def create_timeline():
     return date_list
 
 def build_bar_chart_data():
-    df_actions= read_data()
-
+    # df_actions= read_data()
     x = create_timeline() # the time line we want to show
-    print(x)
     y = [3] * len(x)
     data = go.Bar(
         x=x,
@@ -49,8 +45,9 @@ def build_bar_chart_data():
 
 def create_bar_chart():
     bar_data = build_bar_chart_data()
+    print(bar_data)
     bar_layout = go.Layout(
-        xaxis=dict(type="category")
+        xaxis=dict(type="category",range=[10,26]) # range is the initial zoom on 16 days with the possibility to zoom out
         ,yaxis=dict(title="Number of cases"))
 
     bar_fig = go.Figure(data=bar_data, layout=bar_layout)
