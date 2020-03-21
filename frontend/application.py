@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(r'Covid_19_data_visualisation/data-cases/cases.xlsx')
+    df_cases = pd.read_excel(r'data-cases/cases.xlsx')
 
     return df_cases
 
@@ -76,6 +76,21 @@ am_hover_template = """
 <extra></extra>
 """
 
+def wrap_hover_text(text):
+    if type(text) is not str:
+        return text
+    fracs = []
+    while len(text) > 0:
+        next_space = text.find(" ", 80)  # at least 80 chars per line (expect last line).
+        if next_space == -1:
+            fracs.append(text)
+            break
+        fracs.append(text[:next_space+1])
+        text = text[next_space+1:]
+    return "<br>".join(fracs)
+
+
+
 def build_am_data():
     df = read_cases_data()
     action_data = read_action_data()
@@ -116,7 +131,8 @@ def build_am_data():
                             "color":"rgb(220,220,220)"},
                     mode="lines+markers+text",
                     name="bla", #action["action"],
-                    hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"])),
+                                          #TODO: Evaluate what is possible with this template and what is impossible.
                     text=[action["action"], "mögl. Effekt"],
                     textposition="bottom center",
                     )
