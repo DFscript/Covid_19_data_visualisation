@@ -36,6 +36,13 @@ def create_timeline():
     date_list =[str(date)[:10] for date in date_list]
     return date_list
 
+def read_action_data():
+    df = pd.read_csv("data-actions/policymeasures - measures_taken.csv")
+
+    # Drop any row, which does not contain the bare minimum required for generating an action-marker.
+    df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"])
+    return df
+
 def build_bar_chart_data():
     x = create_timeline() # the time line we want to show
     y = [randrange(10) for i in range(len(x))] # replace with actual cases
