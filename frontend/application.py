@@ -51,7 +51,7 @@ def create_figure():
     df['timestamp'] = df['timestamp'].str.split('T').str[0]
 
     fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
-                            animation_frame='timestamp')
+                            animation_frame='timestamp', height=800)
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
     #                      projection="natural earth")
 
