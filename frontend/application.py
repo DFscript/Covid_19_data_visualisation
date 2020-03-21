@@ -41,13 +41,14 @@ def create_timeline():
 
 def read_action_data():
     df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
-    # Drop any row, which does not contain the bare minimum required for generating an action-marker.
-    df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
+    # Drop any row, which does not contain the bare minimum required for generating an action-marker
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"])
     df["enddate_action"] = pd.to_datetime(df["enddate_action"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+    df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
     return df
 
 def build_bar_chart_data():
@@ -77,9 +78,12 @@ am_hover_template = """
 
 def build_am_data():
     df = read_cases_data()
-    max_cases = max(df['NRW'])/len(df)
-
     action_data = read_action_data()
+
+    #action_data = action_data.reindex(list(range(1,len(action_data)+1)))
+    action_data.index = list(range(1, len(action_data) + 1))
+
+    max_cases = max(df['NRW']) / len(action_data)
     action_data = action_data.sort_values("startdate_action")
 
     # grey lines at start of the action.
@@ -111,7 +115,7 @@ def build_am_data():
                             "symbol": "triangle-down",
                             "color":"rgb(220,220,220)"},
                     mode="lines+markers+text",
-                    name=action["action"],
+                    name="bla", #action["action"],
                     hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
                     text=[action["action"], "mögl. Effekt"],
                     textposition="bottom center",
