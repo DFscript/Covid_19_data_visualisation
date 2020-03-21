@@ -23,7 +23,7 @@ def read_cases_data():
     '''
     load the data
     '''
-    df_cases = pd.read_excel(r'\data-cases\cases.xlsx')
+    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
     return df_cases
 
 def create_15_days(start_date):
@@ -39,7 +39,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
@@ -85,7 +85,7 @@ def build_am_data():
         break
     data = [go.Scatter(
                     x=[action["startdate_action"], action["startdate_action"]+np.timedelta64(15, 'D')],
-                    y=[-1*row_num,-1*row_num],
+                    y=[max_cases*row_num,max_cases*row_num],
                     marker={"size": 16,
                             "symbol": "triangle-down",
                             "color":"green"},
@@ -116,11 +116,18 @@ def merge_figures():
 
     fig.update_xaxes(tickangle=90)
     fig.update_layout(
+        # legend=dict(
+        #     x=0,
+        #     y=1,
+        #     traceorder="normal",
+        #     bordercolor="Black",
+        #     borderwidth=2
+        # ),
         barmode='group',
         plot_bgcolor ='white',
         xaxis=dict(
             tickmode='linear',
-                   # range=[count_days-focus,count_days]
+                 # range=[count_days-focus,count_days]
         ), # range is the initial zoom on 16 days with the possibility to zoom out
         yaxis=dict(title="Number of cases"))
     graph = dcc.Graph(id= 'Timeline', figure=fig)
