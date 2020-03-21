@@ -6,5 +6,5 @@
 
 ```
 docker build -t frontend:latest .
-docker run -d -p 8050:8050 frontend
+docker run -v "$(pwd):/frontend" -p 8050:8050 frontend
 ```
