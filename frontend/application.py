@@ -50,18 +50,6 @@ def create_figure():
     # Cut off time
     df['timestamp'] = df['timestamp'].str.split('T').str[0]
 
-    # Not quite sure but lat and lon where given in * 10e+6
-    buf1 = df['lat'] * 1e-5
-    buf2 = df['lon'] * 1e-5
-
-    df['lat'] = buf2
-    df['lon'] = buf1
-
-    print(df['lat'])
-    print(df['lon'])
-
-    df_car = px.data.carshare()
-
     fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
                             animation_frame='timestamp')
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
