@@ -31,6 +31,7 @@ def clean_data(df):
 #     # df_cases = pd.read_csv(path_cases,sep = ',')
 #     df_actions = clean_data(pd.read_csv(os.path.join("../data-actions", "policymeasures - measures_taken.csv")))
 #     return df_actions
+
 def create_15_days(start_date):
     date_list = pd.date_range(start=start_date, end=start_date+15)
     date_list = [str(date)[:10] for date in date_list]
@@ -44,7 +45,7 @@ def create_timeline():
     return date_list
 
 def read_action_data():
-    df = pd.read_csv("data-actions/policymeasures - measures_taken.csv")
+    df = pd.read_csv(r"data-actions/policymeasures - measures_taken.csv")
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
 
