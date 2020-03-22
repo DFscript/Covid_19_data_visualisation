@@ -15,7 +15,8 @@ from dash.dependencies import Output
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally = True
-
+# Needed for gunicorn
+server = app.server
 
 def create_figure(bubble_for_each_county):
     with open('./county_centers/bundeslaender_marker.json') as json_file:
