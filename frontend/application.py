@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
 import itertools
 import json
-import os
 
-import numpy as np
 import dash
-import dash_daq as daq
 import dash_core_components as dcc
+import dash_daq as daq
 import dash_html_components as html
-import plotly.express as px
 import pandas as pd
-from dash.dependencies import Output
+import plotly.express as px
 from dash.dependencies import Input
-
-from germany import create_germany
+from dash.dependencies import Output
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-app.scripts.config.serve_locally=True
+app.scripts.config.serve_locally = True
 
 
-def create_figure():
+def create_figure(bubble_for_each_county):
+    with open('./county_centers/bundeslaender_marker.json') as json_file:
+        country_to_middles = json.load(json_file)
+
     with open('./county_centers/landkreise_marker.json') as json_file:
         county_to_middles = json.load(json_file)
 
@@ -89,12 +88,27 @@ def create_figure():
     # Cut off time
     df['timestamp'] = df['timestamp'].str.split('T').str[0]
 
-    # Needed to have time slider values sorted
-    df = df.sort_values(by='timestamp')
+    if not bubble_for_each_county:
+        df = df.groupby(by=['country', 'lat', 'lon', 'timestamp'])[['infected', 'deaths']].sum().reset_index()
+        middles = df['country'].map(lambda x: country_to_middles[x])
+        new_lat_lon = pd.DataFrame()
+        new_lat_lon['lat'] = middles.map(lambda x: x[0])
+        new_lat_lon['lon'] = middles.map(lambda x: x[1])
+        df[['lat', 'lon']] = new_lat_lon
+        # Needed to have time slider values sorted
+        df = df.sort_values(by='timestamp')
 
-    fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
-                            animation_frame='timestamp', height=800, hover_data=['county', 'infected', 'deaths'],
-                            custom_data=['county', 'country'])
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
+                                animation_frame='timestamp', height=800, hover_data=['country', 'infected', 'deaths'],
+                                custom_data=['country'])
+
+    if bubble_for_each_county:
+        # Needed to have time slider values sorted
+        df = df.sort_values(by='timestamp')
+
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
+                                animation_frame='timestamp', height=800, hover_data=['county', 'infected', 'deaths'],
+                                custom_data=['county', 'country'])
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
     #                      projection="natural earth")
 
@@ -105,12 +119,13 @@ def create_figure():
 
 app.layout = html.Div(children=[
     daq.ToggleSwitch(
+        id='county-country-switch',
         label='County/Country',
         labelPosition='bottom'
     ),
     dcc.Graph(
-        id='example-graph',
-        figure=create_figure()
+        id='map',
+        figure=create_figure(False)
     ),
     html.Div(id='click-data')
 ])
@@ -118,9 +133,19 @@ app.layout = html.Div(children=[
 
 @app.callback(
     Output('click-data', 'children'),
-    [Input('example-graph', 'clickData')])
-def display_click_data(clickData):
-    return json.dumps(clickData, indent=2)
+    [Input('map', 'clickData')])
+def display_click_data(click_data):
+    return json.dumps(click_data, indent=2)
+
+
+@app.callback(
+    dash.dependencies.Output('map', 'figure'),
+    [dash.dependencies.Input('county-country-switch', 'value')])
+def update_output(value):
+    if value is None:
+        return dash.no_update
+    else:
+        return create_figure(value)
 
 
 if __name__ == '__main__':
