@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+import itertools
 import json
 import os
 
 import numpy as np
 import dash
+import dash_daq as daq
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import pandas as pd
+from dash.dependencies import Output
+from dash.dependencies import Input
 
 from germany import create_germany
 
@@ -36,6 +40,8 @@ def create_figure():
             case_list.append(props)
 
     rows = []
+    county_day_map = {}
+    county_to_country_lat_lon = {}
     for index, case in enumerate(case_list):
         county = case['Landkreis']
         country = case['Bundesland']
@@ -43,9 +49,31 @@ def create_figure():
         infected = case['AnzahlFall']
         timestamp = case['Meldedatum']
         deaths = case['AnzahlTodesfall']
-        rows.append([country, county, lat, lon, infected, timestamp, deaths])
+        row = [county, country, lat, lon, timestamp, infected, deaths]
+        rows.append(row)
+        county_day_map[(county, timestamp)] = row
+        if county not in county_to_country_lat_lon:
+            county_to_country_lat_lon[county] = [country, lat, lon]
 
-    df = pd.DataFrame(data=rows, columns=['country', 'county', 'lat', 'lon', 'infected', 'timestamp', 'deaths'])
+    df_uncompleted = pd.DataFrame(data=rows,
+                                  columns=['county', 'country', 'lat', 'lon', 'timestamp', 'infected', 'deaths'])
+
+    unique_days = df_uncompleted['timestamp'].unique()
+    unique_days.sort()
+    unique_counties = df_uncompleted['county'].unique()
+    unique_counties.sort()
+
+    full_matrix = []
+    for day, county in itertools.product(unique_days, unique_counties):
+        if (county, day) in county_day_map:
+            full_matrix.append(county_day_map[(county, day)])
+        else:
+            full_matrix.append([county] + county_to_country_lat_lon[county] + [day] + [0, 0])
+
+    df = pd.DataFrame(data=full_matrix,
+                      columns=['county', 'country', 'lat', 'lon', 'timestamp', 'infected', 'deaths'])
+
+    df = df.sort_values(by=['county', 'timestamp'], ascending=[True, True])
     # df['timestamp'] = pd.to_datetime(df['timestamp'])
     # Make it so that ('county', 'timestamp') are unique and sum up deaths and infected while doing so
     df = df.groupby(by=['timestamp', 'county', 'lat', 'lon', 'country'])[['deaths', 'infected']].sum().reset_index().\
@@ -65,19 +93,35 @@ def create_figure():
     df = df.sort_values(by='timestamp')
 
     fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
-                            animation_frame='timestamp', height=800)
+                            animation_frame='timestamp', height=800, hover_data=['county', 'infected', 'deaths'],
+                            custom_data=['county', 'country'])
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
     #                      projection="natural earth")
+
+    fig.layout['clickmode'] = 'event+select'
 
     return fig
 
 
 app.layout = html.Div(children=[
+    daq.ToggleSwitch(
+        label='County/Country',
+        labelPosition='bottom'
+    ),
     dcc.Graph(
         id='example-graph',
         figure=create_figure()
-    )
+    ),
+    html.Div(id='click-data')
 ])
+
+
+@app.callback(
+    Output('click-data', 'children'),
+    [Input('example-graph', 'clickData')])
+def display_click_data(clickData):
+    return json.dumps(clickData, indent=2)
+
 
 if __name__ == '__main__':
     app.run_server(host="0.0.0.0", debug=True)

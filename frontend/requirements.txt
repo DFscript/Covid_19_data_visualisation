@@ -3,5 +3,6 @@ dash-renderer
 dash-core-components
 dash-html-components
 dash-table-experiments
+dash-daq
 plotly
 pandas
