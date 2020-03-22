@@ -133,7 +133,7 @@ def build_am_data():
                     name="bla", #action["action"],
                     hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"])),
                                           #TODO: Evaluate what is possible with this template and what is impossible.
-                    text=[action["action"], "mögl. Effekt"],
+                    text=[action["action"] + "<br> Beginn", ""],
                     textposition="bottom center",
                     )
                 for row_num, action in action_data.iterrows()
@@ -147,8 +147,10 @@ def build_am_data():
                             "symbol": "triangle-down",
                             "color":"green"},
                     mode="lines+markers+text",
-                    text=["", "vorrauss. Ende"],
+                    text=[action["action"] + "<br>mögl. Effekt", action["action"] + "<br>vorraus. Ende"],
                     textposition="bottom center",
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"])),
+                    # TODO: Evaluate what is possible with this template and what is impossible.
                     )
                 for row_num, action in action_data.iterrows() if action["enddate_action"]
             ]
