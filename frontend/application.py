@@ -54,12 +54,14 @@ df_cases = read_cases_data()
 df_actions = read_action_data()
 timeline = create_timeline(df_cases.copy(),df_actions)
 
-def filter_data_set_country_level(df_cases= df_cases,df_actions=df_actions,country = 'Bayern'):
+def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe = 'Versammlungen'):
     df_cases=df_cases[df_cases['country']==country]
     df_cases = df_cases.groupby(['timestamp']).sum().tz_localize(None)
 
     df_actions = df_actions[df_actions['location'] == country]
-    # df_actions = df_actions[df_actions['action'] == 'Veranstaltungsverbot']
+    if type(zielgruppe) !=list:
+        zielgruppe = [zielgruppe]
+    df_actions = df_actions[df_actions['Zielgruppe'].isin(zielgruppe)]
     return df_cases,df_actions
 
 def build_merged_dataset(df_cases,timeline):
@@ -213,8 +215,8 @@ def merge_figures(bar_figure,am_figure):
 
 
 
-def main_figure(country):
-    df_cases,df_actions = filter_data_set_country_level(country= country) # filter on country level
+def main_figure(country,zielgruppe):
+    df_cases,df_actions = filter_data_set(country= country,zielgruppe=zielgruppe) # filter on country level
     df_merged = build_merged_dataset(df_cases,timeline)
     bar_charts = build_bar_chart_data(df_merged)
     if not df_actions.empty:
@@ -233,6 +235,7 @@ def normalize_data():
 relevant_countries1 = df_cases["country"].to_list()
 relevant_countries2 = df_actions["location"].to_list()
 relevant_countries = np.unique(relevant_countries1+relevant_countries2)
+df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
 
 
 dropdown_bundesland = dcc.Dropdown(
@@ -245,7 +248,18 @@ dropdown_bundesland = dcc.Dropdown(
     # multi=True
     )
 
-fig = main_figure(country = "Bayern")
+dropdown_zielgruppe = dcc.Dropdown(
+        id='zielgruppe',
+        options= [{
+        "label": i,
+        "value": i
+    } for i in df_zielgruppe],
+    value= 'Versammlungen',
+    multi=True
+    )
+
+
+fig = main_figure(country = "Bayern",zielgruppe="Versammlungen")
 plot = dcc.Graph(id= 'Timeline', figure=fig)
 
 
@@ -254,6 +268,7 @@ app.layout = html.Div(children=[
     Timeline of Events in Germany
     ''',id = 'header'),
    dropdown_bundesland,
+    dropdown_zielgruppe,
     plot
 
 ])
@@ -261,10 +276,11 @@ app.layout = html.Div(children=[
 
 @app.callback(Output("Timeline", "figure"),
     [Input("bundesland", "value"),
+     Input("zielgruppe","value")
     ],
 )
-def filter_plot(bundesland):
-    figure = main_figure(country=bundesland)
+def filter_plot(bundesland,zielgruppe):
+    figure = main_figure(country=bundesland, zielgruppe=zielgruppe)
     return figure
 
 if __name__ == '__main__':
