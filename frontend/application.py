@@ -13,7 +13,7 @@ import plotly.express as px
 from dash.dependencies import Input
 from dash.dependencies import Output
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['assets/external_stylesheet.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally = True
 
@@ -409,8 +409,11 @@ fig = main_figure(country="Bayern", zielgruppe="Versammlungen")
 plot = dcc.Graph(id='Timeline', figure=fig)
 
 
-app.layout = html.Div(children=[
-    html.Div(children=[
+app.layout = html.Div(id="container",children=[
+    html.Div(id = "container_left",children=[
+html.H1(children='''
+            Spatial overview
+            ''', id='header2'),
         daq.ToggleSwitch(
             id='county-country-switch',
             label='Landkreis/Bundesland',
@@ -421,18 +424,17 @@ app.layout = html.Div(children=[
             figure=create_figure(False)
         ),
         html.Div(id='click-data')
-    ], style={'width': '50%', 'float': 'left'}),
-    html.Div(children=[
-        html.Div(children=[
+    ]),
+
+    html.Div(id="container_right",children=[
+
             html.H1(children='''
             Timeline of Events in Germany
             ''', id='header'),
             dropdown_bundesland,
             dropdown_zielgruppe,
             plot
-
-        ])
-    ], style={'width': '50%', 'float': 'right'}),
+    ]),
 ])
 
 
