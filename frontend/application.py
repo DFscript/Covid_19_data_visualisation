@@ -9,15 +9,13 @@ import os
 from random import randrange
 from datetime import datetime
 
-
+from numpy.distutils.system_info import dfftw_info
 
 external_stylesheets = ['assetes/external_sytlesheet.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.scripts.config.serve_locally=True
-
-
 
 def read_cases_data():
     '''
@@ -27,38 +25,51 @@ def read_cases_data():
 
     return df_cases
 
-def create_15_days(start_date):
-    date_list = pd.date_range(start=start_date, end=start_date+15)
-    date_list = [str(date)[:10] for date in date_list]
-    return date_list
-
-def create_timeline():
-    df = read_cases_data()
-    start = '2/1/2020' #TODO replace with first date in our data
-    end = datetime.today().strftime('%Y-%m-%d')
-    date_list = pd.date_range(start=start, end =end)
-    return date_list
 
 def read_action_data():
+
     df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"], errors="coerce")
     df["enddate_action"] = pd.to_datetime(df["enddate_action"], errors="coerce")
+    df["enddate_action"] = df["enddate_action"].fillna(max(df["enddate_action"]))
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
     return df
 
+
+def create_timeline(df_cases,df_actions):
+    earliest_date = min(min(df_cases['Time']),min(df_actions["startdate_action"]))
+    latest_date = max(max(df_cases['Time']),max(df_actions["enddate_action"]))
+    start = earliest_date
+    end = latest_date
+    date_list = pd.DataFrame(pd.date_range(start=start, end=end))
+    date_list.columns = ['Time']
+    return date_list
+
+def build_merged_dataset():
+    df_cases = read_cases_data()
+    df_actions = read_action_data()
+    timeline = create_timeline(df_cases,df_actions)
+    print(type(df_cases['Time'][0]))
+    print(type(timeline['Time'][0]))
+    timeline.index = timeline['Time']
+    df_cases.index = df_cases['Time']
+    merged_df = timeline.join(df_cases,how='left',lsuffix='_left', rsuffix='_right')
+    return merged_df
+
+
 def build_bar_chart_data():
-    df = read_cases_data()
+    df = build_merged_dataset()
     # x = create_timeline() # the time line we want to show
     bar_charts =[]
     color = ['#B3B3B3','#171717']
 
     for i,land in enumerate(['NRW','Bayern']):
-        x= df['Time']
+        x= df['Time_left']
         y=df[land]
         # y = [randrange(10) for i in range(len(x))] # replace with actual cases
         data = go.Bar(
