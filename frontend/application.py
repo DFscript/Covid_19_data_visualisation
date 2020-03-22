@@ -5,11 +5,7 @@ import dash_html_components as html
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
-import os
-from random import randrange
-from datetime import datetime
-
-from numpy.distutils.system_info import dfftw_info
+from dash.dependencies import Input, Output
 
 external_stylesheets = ['assetes/external_sytlesheet.css']
 
@@ -18,14 +14,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally=True
 
 def read_cases_data():
-    df_cases = pd.read_csv(r'data-cases/data_set.csv')
+    df_cases = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\data_set.csv')
     df_cases["timestamp"] = pd.to_datetime(df_cases["timestamp"])
     return df_cases
 
 
 def read_action_data():
 
-    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"], errors="coerce")
@@ -39,7 +35,7 @@ def read_action_data():
 
 
 def create_timeline(df_cases,df_actions):
-    # df_cases.index = df_cases['timestamp']
+    df_cases.index = df_cases['timestamp']
     df_cases.index = df_cases.index.tz_localize(None)
     earliest_date = min(min(df_cases.index),min(df_actions["startdate_action"]))
     latest_date = max(max(df_cases.index),max(df_actions["enddate_action"]))
@@ -49,14 +45,21 @@ def create_timeline(df_cases,df_actions):
     date_list.columns = ['Time']
     return date_list
 
-def filter_data_set_country_level(df_cases,country = 'Bayern'):
-    df_cases=df_cases[df_cases['country']==country]
-    df_cases = df_cases.groupby(['timestamp']).sum()
-    return df_cases
 
-def build_merged_dataset(df_cases,df_actions):
+df_cases = read_cases_data()
+df_actions = read_action_data()
+timeline = create_timeline(df_cases.copy(),df_actions)
+
+def filter_data_set_country_level(df_cases= df_cases,df_actions=df_actions,country = 'Bayern'):
+    df_cases=df_cases[df_cases['country']==country]
+    df_cases = df_cases.groupby(['timestamp']).sum().tz_localize(None)
+
+    df_actions = df_actions[df_actions['location'] == country]
+    # df_actions = df_actions[df_actions['action'] == 'Veranstaltungsverbot']
+    return df_cases,df_actions
+
+def build_merged_dataset(df_cases,timeline):
     #main idea if a timestamp is missing it is addded here
-    timeline = create_timeline(df_cases,df_actions)
     timeline.index = timeline['Time']
     merged_df = timeline.join(df_cases,how='left')
     return merged_df
@@ -102,8 +105,12 @@ def wrap_hover_text(text):
 def build_am_data(df_cases,action_data):
     #action_data = action_data.reindex(list(range(1,len(action_data)+1)))
     action_data.index = list(range(1, len(action_data) + 1))
+    if not df_cases['infected'].empty:
+        max_cases = max(df_cases['infected']) / len(action_data)
+    else:
+        max_cases=  len(action_data)
 
-    max_cases = max(df_cases['infected']) / len(action_data)
+
     action_data = action_data.sort_values("startdate_action")
 
     # grey lines at start of the action.
@@ -198,18 +205,17 @@ def merge_figures(bar_figure,am_figure):
                  # range=[count_days-focus,count_days]
         ), # range is the initial zoom on 16 days with the possibility to zoom out
         yaxis=dict(title="Number of new cases"))
-    graph = dcc.Graph(id= 'Timeline', figure=fig)
-    return graph
+    return fig
 
-def main_figure():
-    df_cases = read_cases_data()
-    df_cases = filter_data_set_country_level(df_cases) # filter on country level
-    df_actions = read_action_data()
-    df_merged = build_merged_dataset(df_cases,df_actions)
+
+
+def main_figure(country):
+    df_cases,df_actions = filter_data_set_country_level(country= country) # filter on country level
+    df_merged = build_merged_dataset(df_cases,timeline)
     bar_charts = build_bar_chart_data(df_merged)
     am_charts = build_am_data(df_cases,df_actions)
-    merged_figure = merge_figures(bar_charts,am_charts)
-    return merged_figure
+    figure = merge_figures(bar_charts,am_charts)
+    return figure
 
 def normalize_data():
     '''
@@ -217,27 +223,21 @@ def normalize_data():
     :return:
     '''
 
+relevant_countries = df_actions["location"].unique()
+
 dropdown_bundesland = dcc.Dropdown(
         id='bundesland',
-        options=[
-            {'label': 'NRW', 'value': 'NRW'},
-            {'label': 'Bayern', 'value': 'Bayern'},
-        ],
-        value='NRW',
-    multi=True
+        options= [{
+        "label": i,
+        "value": i
+    } for i in relevant_countries],
+        value='Bayern',
+    # multi=True
     )
 
-dropdown_landkreis = dcc.Dropdown(
-        id='landkreis',
-        options=[
-            {'label': 'Köln', 'value': 'Köln'},
-            {'label': 'Aachen', 'value': 'Aachen'},
-        ],
-        value='Köln',
-    multi=True
-    )
+fig = main_figure(country = "Bayern")
+plot = dcc.Graph(id= 'Timeline', figure=fig)
 
-plot = main_figure()
 
 app.layout = html.Div(children=[
     html.H1(children='''
@@ -245,11 +245,21 @@ app.layout = html.Div(children=[
     '''),
 
    dropdown_bundesland,
-    dropdown_landkreis,
     plot
 
 ])
 
+
+@app.callback(Output("Timeline", "figure"),
+    [Input("bundesland", "value"),
+    ],
+)
+def filter_plot(bundesland):
+    figure = main_figure(country=bundesland)
+    return figure
+
 if __name__ == '__main__':
     print('reload')
     app.run_server(host="0.0.0.0", debug=True)
+
+
