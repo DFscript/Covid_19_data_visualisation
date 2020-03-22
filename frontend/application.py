@@ -325,7 +325,7 @@ def create_figure(bubble_for_each_county):
         # Needed to have time slider values sorted
         df = df.sort_values(by='timestamp')
 
-        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", size_max=60, mapbox_style='open-street-map',
                                 animation_frame='timestamp', height=800, hover_data=['country', 'infected', 'deaths'],
                                 custom_data=['country'])
 
