@@ -337,7 +337,7 @@ def create_figure(bubble_for_each_county):
         fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
                                 animation_frame='timestamp', height=800, hover_data=['country', 'county', 'infected',
                                                                                      'deaths'],
-                                custom_data=['county', 'country'])
+                                custom_data=['country', 'county'])
     # fig = px.scatter_geo(df, hover_name="county", size="infected", animation_frame="timestamp",
     #                      projection="natural earth")
 
