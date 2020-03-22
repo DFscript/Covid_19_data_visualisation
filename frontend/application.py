@@ -12,12 +12,72 @@ import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input
 from dash.dependencies import Output
+from textwrap import dedent
+help_text = """
+# Willkommen bei Causality vc. Corona.
+
+Der Corona-Viruas breitet sich über Deutschland, Europa und global aus und Regierungen auf der ganzen Welt suchen und erlassen Maßnahmen mit dem Ziel die Ausbreitung des Viruses zu verlangsamen. Nicht nur auf der Ebene von Nationen sonder auf allen Ebenen bis hinunter zu zu Städten und Kreisen rätseln, welche Maßnahmen am effektivsten sind.
+
+Um diese Frage letztlich zu beantworten muss man sich ansehen, wie sich der Verlauf der Infektionszahlen im Nachgang zu verschiedenen Maßnahmen verhalten. Beim Corona-Virus geht man typischerweise davon aus, dass sich die Effekte von getroffenen Maßnahmen nicht vor dem 15ten Tag nach Inkraftreten der Maßnahme sichtbar werden.
+
+## Das CausalityVsCorona-Projekt
+
+Das Decisive Actions Team, dass sich im Rahmen des #WeVsVirusHack zusammengefunden hat, hat Maßnahmen recherchiert, die auf verschiedenen Ebenen getroffen worden sind und diese zusammen mit den Infektionszahlen in der betreffenden Region/dem Bundeslang zusammengebracht.
+
+## Die Darstellung
+
+Der Verlauf der Infektionszahlen wird als Balkendiagramm dargestellt. Darüber werden die verschiedenen Maßnahmen dargestellt. Jede Maßnahme wird durch einen Marker zu ihrem Inkrafttreten, einer 15-tägigen, grau dargestellten Spanne in der noch keine Effekte zu erwarten sind und einer grün dargestellten Spanne vom 15ten Tag bis zu ihrem geplanten Ende repräsentiert. Der grün dargestellt Bereich erstreckt sich noch ein Stück über das Ende der Maßnahme hinaus, da es durchaus denkbar ist, dass eine Maßnahme auch nach ihrem Ende nachwirkt.
+
+Diese Darstellung kann z.Zt. für jedes der Bundesländer aus der Deutschlandkarte ausgewählt werden. Später ist eine Auflösung bis auf Kreisebene geplant.
+
+## Weiterentwicklung
+
+Das Projekt soll auch nach dem Ende des Hackathons weiterentwickelt werden. Zurzeit sind folgende Erweiterungen geplant:
+
+*   Auflösung bis auf Kreis-Ebene
+*   Erweiterung über Deutschland hinaus (Recherche-Teams gesucht)
+"""
 
 external_stylesheets = ['assets/external_stylesheet.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally = True
 # Needed for gunicorn
 server = app.server
+
+
+def build_modal_info_overlay(id, side, content):
+    """
+    Build div representing the info overlay for a plot panel
+    """
+    div = html.Div([  # modal div
+        html.Div([  # content div
+            html.Div([
+                html.H4([
+                    "Info",
+                    html.Img(
+                        id=f'close-{id}-modal',
+                        src="assets/close.png",
+                        n_clicks=0,
+                        className='info-icon',
+                        style={'margin': 0},
+                    ),
+                ], className="container_title", style={'color': 'white'}),
+
+                dcc.Markdown(
+                    content
+                ),
+            ])
+        ],
+            className=f'modal-content {side}',
+        ),
+        html.Div(className='modal')
+    ],
+        id=f"{id}-modal",
+        style={"display": "none"},
+    )
+
+    return div
+
 
 def read_cases_data():
     df_cases = pd.read_csv(r'../data-cases/data_set.csv')
@@ -450,6 +510,13 @@ plot = dcc.Graph(id='Timeline', figure=fig)
 
 app.layout = html.Div(id="container",children=[
     html.Div(id = "container_left",children=[
+        build_modal_info_overlay('indicator', 'bottom', dedent(help_text)),
+        html.Img(
+                        id='show-indicator-modal',
+                        src="assets/question.png",
+                        n_clicks=0,
+                        className='info-icon',
+                    ),
 html.H1(children='''
             Spatial overview
             ''', id='header2'),
@@ -512,6 +579,17 @@ def filter_plot(bundesland, zielgruppe,select_all,all_zielgruppe):
         figure = main_figure(country=bundesland, zielgruppe=zielgruppe)
 
     return figure
+
+
+@app.callback([Output(f"indicator-modal", 'style'), Output(f"container_left", 'style')],
+                      [Input(f'show-indicator-modal', 'n_clicks'),
+                       Input(f'close-indicator-modal', 'n_clicks')])
+def toggle_modal(n_show, n_close):
+    ctx = dash.callback_context
+    if ctx.triggered and ctx.triggered[0]['prop_id'].startswith('show-'):
+        return {"display": "block"}, {'zIndex': 1003}
+    else:
+        return {"display": "none"}, {'zIndex': 0}
 
 
 if __name__ == '__main__':
