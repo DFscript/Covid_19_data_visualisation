@@ -16,7 +16,8 @@ from dash.dependencies import Output
 external_stylesheets = ['assets/external_stylesheet.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally = True
-
+# Needed for gunicorn
+server = app.server
 
 def read_cases_data():
     df_cases = pd.read_csv(r'../data-cases/data_set.csv')
@@ -55,11 +56,24 @@ def read_action_data():
     return df
 
 
+
 def create_timeline(df_cases,df_actions):
-    df_cases.index = df_cases['timestamp']
+    # df_cases.index = df_cases['timestamp']
     df_cases.index = df_cases.index.tz_localize(None)
-    earliest_date = min(min(df_cases.index),min(df_actions["startdate_action"]))
-    latest_date = max(max(df_cases.index),max(df_actions["enddate_action"]))
+    if not df_actions["startdate_action"].empty and not df_cases.index.empty:
+        earliest_date = min(min(df_cases.index),min(df_actions["startdate_action"]))
+    elif not df_cases.index.empty:
+        earliest_date = min(df_cases.index)
+    elif not df_actions["startdate_action"].empty:
+        earliest_date = min(df_actions["startdate_action"])
+
+
+    if not df_actions["enddate_action"].empty:
+        latest_date = max(max(df_cases.index),max(df_actions["enddate_action"]))
+    elif not df_cases.index.empty:
+        latest_date = max(df_cases.index)
+    elif not df_actions["enddate_action"].empty:
+        latest_date =max(df_actions["enddate_action"])
     start = earliest_date
     end = latest_date
     date_list = pd.DataFrame(pd.date_range(start=start, end=end))
@@ -69,13 +83,16 @@ def create_timeline(df_cases,df_actions):
 
 df_cases = read_cases_data()
 df_actions = read_action_data()
+
+
+
 df_events = read_event_data()
 ZG_WINTER_HOLYDAYS = "Winterferien (regulär)"
 df_events["Zielgruppe"] = ZG_WINTER_HOLYDAYS
 df_events["action"] = "Winterferien"
 df_events["details_action"] = "Die regulären Winterferien des Bundeslandes."
 df_actions = pd.concat([df_actions, df_events])
-timeline = create_timeline(df_cases.copy(),df_actions)
+
 
 def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe = 'Versammlungen'):
     df_cases=df_cases[df_cases['country']==country]
@@ -230,7 +247,7 @@ def merge_figures(bar_figure,am_figure):
         barmode='group',
         plot_bgcolor ='white',
         xaxis=dict(
-            tickmode='linear',
+            # tickmode='linear',
                  # range=[count_days-focus,count_days]
         ), # range is the initial zoom on 16 days with the possibility to zoom out
         yaxis=dict(title="Number of new cases"))
@@ -238,8 +255,9 @@ def merge_figures(bar_figure,am_figure):
 
 
 
-def main_figure(country,zielgruppe):
+def main_figure(country,zielgruppe,df_cases=df_cases,df_actions=df_actions):
     df_cases,df_actions = filter_data_set(country= country,zielgruppe=zielgruppe) # filter on country level
+    timeline = create_timeline(df_cases, df_actions)
     df_merged = build_merged_dataset(df_cases,timeline)
     bar_charts = build_bar_chart_data(df_merged)
     if not df_actions.empty:
@@ -258,6 +276,7 @@ def normalize_data():
 relevant_countries1 = df_cases["country"].to_list()
 relevant_countries2 = df_actions["location"].to_list()
 relevant_countries = np.unique(relevant_countries1+relevant_countries2)
+relevant_countries = [rel_c for rel_c in relevant_countries if rel_c != 'Niedersachsen']
 df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
 
 
@@ -422,6 +441,8 @@ dropdown_zielgruppe = dcc.Dropdown(
     multi=True
     )
 
+select_all = dcc.Checklist(id='select-all',
+              options=[{'label': 'Select All', 'value': "1"}])
 
 fig = main_figure(country="Bayern", zielgruppe="Versammlungen")
 plot = dcc.Graph(id='Timeline', figure=fig)
@@ -451,6 +472,7 @@ html.H1(children='''
             ''', id='header'),
             dropdown_bundesland,
             dropdown_zielgruppe,
+        select_all,
             plot
     ]),
 ])
@@ -478,9 +500,17 @@ def update_output(value):
 
 @app.callback(Output("Timeline", "figure"),
               [Input("bundesland", "value"),
-               Input("zielgruppe","value")])
-def filter_plot(bundesland, zielgruppe):
-    figure = main_figure(country=bundesland, zielgruppe=zielgruppe)
+               Input("zielgruppe","value"),
+               Input("select-all","value"),
+            Input("zielgruppe","options"),
+               ])
+def filter_plot(bundesland, zielgruppe,select_all,all_zielgruppe):
+    if select_all ==["1"]:
+        all_zielgruppe = [i['value'] for i in all_zielgruppe]
+        figure = main_figure(country=bundesland, zielgruppe=all_zielgruppe)
+    else:
+        figure = main_figure(country=bundesland, zielgruppe=zielgruppe)
+
     return figure
 
 
