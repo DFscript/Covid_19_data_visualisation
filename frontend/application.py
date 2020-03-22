@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import itertools
 import json
+import itertools
 
 import dash
+from functools import partial
 import plotly.graph_objects as go
 import dash_core_components as dcc
 import dash_daq as daq
@@ -94,14 +96,29 @@ df_events["details_action"] = "Die regulären Winterferien des Bundeslandes."
 df_actions = pd.concat([df_actions, df_events])
 
 
-def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe = 'Versammlungen'):
+def is_entry_in_filter(filter, entry):
+    if type(entry) is not str or len(entry) == 0:
+        return False
+    zielgruppen_entry = [zg.strip() for zg in entry.split(",")]
+    number_of_matching_entries = sum([1 for zg in zielgruppen_entry if zg in filter])
+    return number_of_matching_entries > 0
+
+
+def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe_filter = 'Versammlungen'):
     df_cases=df_cases[df_cases['country']==country]
     df_cases = df_cases.groupby(['timestamp']).sum().tz_localize(None)
 
     df_actions = df_actions[df_actions['location'] == country]
-    if type(zielgruppe) !=list:
-        zielgruppe = [zielgruppe]
-    df_actions = df_actions[df_actions['Zielgruppe'].isin(zielgruppe)]
+    if type(zielgruppe_filter) !=list:
+        zielgruppe = [zielgruppe_filter]
+
+    # Ok, this is a little involved: We need to know whether any of the zielgruppen for a given entry (encoded in
+    # a single, comma-separated string) are in the zielgruppe_filter. Therefore, we split the entry_zielgruppen and
+    # test them separatly. We ad one True value to the list comprehension if the currenty zg_entry is in the
+    # zielgruppe_filter. If none are in the filter, the list comprehension returns an empty list. If at least one
+    # of the zielgruppen of the entry is in the filter, the list is not empty and we use that entry (OR, according to
+    # issue #14).
+    df_actions = df_actions[df_actions["Zielgruppe"].map(partial(is_entry_in_filter, zielgruppe_filter))]
     return df_cases,df_actions
 
 def build_merged_dataset(df_cases,timeline):
@@ -256,7 +273,7 @@ def merge_figures(bar_figure,am_figure):
 
 
 def main_figure(country,zielgruppe,df_cases=df_cases,df_actions=df_actions):
-    df_cases,df_actions = filter_data_set(country= country,zielgruppe=zielgruppe) # filter on country level
+    df_cases,df_actions = filter_data_set(country= country,zielgruppe_filter=zielgruppe) # filter on country level
     timeline = create_timeline(df_cases, df_actions)
     df_merged = build_merged_dataset(df_cases,timeline)
     bar_charts = build_bar_chart_data(df_merged)
@@ -278,6 +295,10 @@ relevant_countries2 = df_actions["location"].to_list()
 relevant_countries = np.unique(relevant_countries1+relevant_countries2)
 relevant_countries = [rel_c for rel_c in relevant_countries if rel_c != 'Niedersachsen']
 df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
+# separete several zielgruppen in the same entry (comma-separated)
+df_zielgruppe = itertools.chain.from_iterable([zg.split(",") for zg in df_zielgruppe])
+df_zielgruppe = [zg.strip() for zg in df_zielgruppe] # remove any whitespaces left.
+df_zielgruppe = list(set(df_zielgruppe)) # Remove any doubles.
 
 
 def create_figure(bubble_for_each_county):
