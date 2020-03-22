@@ -81,6 +81,7 @@ def create_timeline(df_cases,df_actions):
     return date_list
 
 
+df_cases = read_cases_data()
 df_actions = read_action_data()
 
 
