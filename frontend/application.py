@@ -72,7 +72,8 @@ def build_bar_chart_data():
 
 am_hover_template = """
 <b>%{{text}}</b><br>
-{details_action}
+{details_action} <br><br>
+<i>Vom {start_date} bis vorauss. {end_date}</i>
 <extra></extra>
 """
 
@@ -131,7 +132,9 @@ def build_am_data():
                             "color":"rgb(220,220,220)"},
                     mode="lines+markers+text",
                     name="bla", #action["action"],
-                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"])),
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"]),
+                                                           start_date=action["startdate_action"].strftime("%d.%m.%Y"),
+                                                           end_date=action["enddate_action"].strftime("%d.%m.%Y")),
                                           #TODO: Evaluate what is possible with this template and what is impossible.
                     text=[action["action"] + "<br> Beginn", ""],
                     textposition="bottom center",
@@ -149,7 +152,9 @@ def build_am_data():
                     mode="lines+markers+text",
                     text=[action["action"] + "<br>mögl. Effekt", action["action"] + "<br>vorraus. Ende"],
                     textposition="bottom center",
-                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"])),
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"]),
+                                               start_date=action["startdate_action"].strftime("%d.%m.%Y"),
+                                               end_date=action["enddate_action"].strftime("%d.%m.%Y")),
                     # TODO: Evaluate what is possible with this template and what is impossible.
                     )
                 for row_num, action in action_data.iterrows() if action["enddate_action"]
