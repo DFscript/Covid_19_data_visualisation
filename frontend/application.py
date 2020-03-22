@@ -16,7 +16,8 @@ from dash.dependencies import Output
 external_stylesheets = ['assets/external_stylesheet.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally = True
-
+# Needed for gunicorn
+server = app.server
 
 def read_cases_data():
     df_cases = pd.read_csv(r'../data-cases/data_set.csv')
