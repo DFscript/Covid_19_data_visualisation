@@ -14,20 +14,24 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally=True
 
 def read_cases_data():
-    df_cases = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\data_set.csv')
+    df_cases = pd.read_csv(r'data-cases/data_set.csv')
     df_cases["timestamp"] = pd.to_datetime(df_cases["timestamp"])
     return df_cases
 
 
 def read_action_data():
 
-    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
+    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"], errors="coerce")
     df["enddate_action"] = pd.to_datetime(df["enddate_action"], errors="coerce")
     df["enddate_action"] = df["enddate_action"].fillna(max(df["enddate_action"]))
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df = df.replace("Baden-Würtemberg","Baden-Württemberg")
+    df = df.replace("Mecklenburg Vorpommern","Mecklenburg-Vorpommern")
+    df = df.replace("NRW","Nordrhein-Westfalen")
+
 
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
@@ -213,7 +217,10 @@ def main_figure(country):
     df_cases,df_actions = filter_data_set_country_level(country= country) # filter on country level
     df_merged = build_merged_dataset(df_cases,timeline)
     bar_charts = build_bar_chart_data(df_merged)
-    am_charts = build_am_data(df_cases,df_actions)
+    if not df_actions.empty:
+        am_charts = build_am_data(df_cases,df_actions)
+    else:
+        am_charts = []
     figure = merge_figures(bar_charts,am_charts)
     return figure
 
@@ -223,7 +230,10 @@ def normalize_data():
     :return:
     '''
 
-relevant_countries = df_actions["location"].unique()
+relevant_countries1 = df_cases["country"].to_list()
+relevant_countries2 = df_actions["location"].to_list()
+relevant_countries = np.unique(relevant_countries1+relevant_countries2)
+
 
 dropdown_bundesland = dcc.Dropdown(
         id='bundesland',
@@ -242,8 +252,7 @@ plot = dcc.Graph(id= 'Timeline', figure=fig)
 app.layout = html.Div(children=[
     html.H1(children='''
     Timeline of Events in Germany
-    '''),
-
+    ''',id = 'header'),
    dropdown_bundesland,
     plot
 
