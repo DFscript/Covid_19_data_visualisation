@@ -2,6 +2,13 @@
 height: 100vh;
     /*background-color: lightgray;*/
 }
+#log_lin_switch{
+    display: inline-block;
+}
+
+#accumulated_new_switch{
+    display: inline-block;
+}
 
 #container_left{
 width: 50% ;
@@ -33,5 +40,74 @@ float: right
 #header2{
     text-align: center;
         font-family: "Arial";
+    display: inline-block;
 
+}
+
+#helpbutton{
+    background-image: url(question.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 80px;
+    width: 80px;
+    background-color: Transparent;
+    border: none;
+}
+
+#helpbutton:hover span {
+  display:none
+}
+
+#helpbutton:hover:before {
+  content:"Completed!";
+}
+
+#helpbutton:hover {
+  background-color: green;
+}
+
+/* Modal info layer
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.modal {
+    position: fixed;
+    z-index: 1002; /* Sit on top, including modebar which has z=1001 */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    background-color: rgba(0, 0, 0, 0.6); /* Black w/ opacity */
+}
+
+.modal-content {
+    z-index: 1004; /* Sit on top, including modebar which has z=1001 */
+    position: fixed;
+    left: 0;
+    width: 60%;
+    background-color: #3949ab;  /* Material indigo 600 */
+    color: white;
+    border-radius: 5px;
+    margin-left: 20%;
+    margin-bottom: 2%;
+    margin-top: 2%;
+}
+
+.modal-content > div {
+    text-align: left;
+    margin: 15px;
+}
+
+.modal-content.bottom {
+    bottom: 0;
+}
+
+.modal-content.top {
+    top: 0;
+}
+
+.info-icon {
+  float: right;
+  cursor: pointer;
+  height: 2.2rem;
+  width: 2.2rem;
+  margin: 0.2rem;
 }
