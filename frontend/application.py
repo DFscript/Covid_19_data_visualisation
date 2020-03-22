@@ -24,6 +24,18 @@ def read_cases_data():
     df_cases["timestamp"] = pd.to_datetime(df_cases["timestamp"])
     return df_cases
 
+def read_event_data():
+    df = pd.read_csv(r'../data-actions/Winterferien2019-20.csv')
+    df["startdate_action"] = pd.to_datetime(df["startdate_action"], errors="coerce")
+    df["enddate_action"] = pd.to_datetime(df["enddate_action"], errors="coerce")
+
+
+    df = df.replace("Baden-Würtemberg","Baden-Württemberg")
+    df = df.replace("Mecklenburg Vorpommern","Mecklenburg-Vorpommern")
+    df = df.replace("NRW","Nordrhein-Westfalen")
+
+    df = df.dropna(subset=["startdate_action", "enddate_action",  "location"], how="any")
+    return df
 
 def read_action_data():
 
@@ -58,6 +70,12 @@ def create_timeline(df_cases,df_actions):
 
 df_cases = read_cases_data()
 df_actions = read_action_data()
+df_events = read_event_data()
+ZG_WINTER_HOLYDAYS = "Winterferien (regulär)"
+df_events["Zielgruppe"] = ZG_WINTER_HOLYDAYS
+df_events["action"] = "Winterferien"
+df_events["details_action"] = "Die regulären Winterferien des Bundeslandes."
+df_actions = pd.concat([df_actions, df_events])
 timeline = create_timeline(df_cases.copy(),df_actions)
 
 def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe = 'Versammlungen'):
@@ -171,7 +189,7 @@ def build_am_data(df_cases,action_data):
                     y=[max_cases*row_num,max_cases*row_num],
                     marker={"size": 16,
                             "symbol": "triangle-down",
-                            "color":"green"},
+                            "color":"blue" if action["Zielgruppe"] == ZG_WINTER_HOLYDAYS else "green"},
                     mode="lines+markers",
                     text=[action["action"] + "<br>mögl. Effekt", action["action"] + "<br>vorraus. Ende"],
                     textposition="bottom center",
@@ -186,7 +204,7 @@ def build_am_data(df_cases,action_data):
                     x=[action["startdate_action"]+np.timedelta64(15, 'D'),
                        action["enddate_action"]+np.timedelta64(15, 'D')],
                     y=[max_cases*row_num,max_cases*row_num],
-                    marker={"color":"green"},
+                    marker={"color":"blue" if action["Zielgruppe"] == ZG_WINTER_HOLYDAYS else "green"},
                     mode="lines",
                     )
                 for row_num, action in action_data.iterrows() if action["enddate_action"]
