@@ -18,20 +18,26 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally=True
 
 def read_cases_data():
-    df_cases = pd.read_excel(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-cases\cases.xlsx')
+    '''
+    load the data
+    '''
+    df_cases = pd.read_excel(r'data-cases/cases.xlsx')
+
     return df_cases
 
 
 def read_action_data():
-    df = pd.read_csv(r'C:\Users\MaxSchemmer\Documents\c192\Covid_19_data_visualisation\data-actions\policymeasures - measures_taken.csv')
-    # Drop any row, which does not contain the bare minimum required for generating an action-marker.
-    df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
+
+    df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"])
     df["enddate_action"] = pd.to_datetime(df["enddate_action"])
     df["enddate_action"] = df["enddate_action"].fillna(max(df["enddate_action"]))
     df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+    # Drop any row, which does not contain the bare minimum required for generating an action-marker.
+    df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
     return df
 
 
@@ -77,15 +83,34 @@ def build_bar_chart_data():
 
 am_hover_template = """
 <b>%{{text}}</b><br>
-{details_action}
+{details_action} <br><br>
+<i>Vom {start_date} bis vorauss. {end_date}</i>
 <extra></extra>
 """
 
+def wrap_hover_text(text):
+    if type(text) is not str:
+        return text
+    fracs = []
+    while len(text) > 0:
+        next_space = text.find(" ", 80)  # at least 80 chars per line (expect last line).
+        if next_space == -1:
+            fracs.append(text)
+            break
+        fracs.append(text[:next_space+1])
+        text = text[next_space+1:]
+    return "<br>".join(fracs)
+
+
+
 def build_am_data():
     df = read_cases_data()
-    max_cases = max(df['NRW'])/len(df)
-
     action_data = read_action_data()
+
+    #action_data = action_data.reindex(list(range(1,len(action_data)+1)))
+    action_data.index = list(range(1, len(action_data) + 1))
+
+    max_cases = max(df['NRW']) / len(action_data)
     action_data = action_data.sort_values("startdate_action")
 
     # grey lines at start of the action.
@@ -117,9 +142,12 @@ def build_am_data():
                             "symbol": "triangle-down",
                             "color":"rgb(220,220,220)"},
                     mode="lines+markers+text",
-                    name=action["action"],
-                    hovertemplate=am_hover_template.format(details_action=action["details_action"]), #TODO: Evaluate what is possible with this template and what is impossible.
-                    text=[action["action"], "mögl. Effekt"],
+                    name="bla", #action["action"],
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"]),
+                                                           start_date=action["startdate_action"].strftime("%d.%m.%Y"),
+                                                           end_date=action["enddate_action"].strftime("%d.%m.%Y")),
+                                          #TODO: Evaluate what is possible with this template and what is impossible.
+                    text=[action["action"] + "<br> Beginn", ""],
                     textposition="bottom center",
                     )
                 for row_num, action in action_data.iterrows()
@@ -133,8 +161,12 @@ def build_am_data():
                             "symbol": "triangle-down",
                             "color":"green"},
                     mode="lines+markers+text",
-                    text=["", "vorrauss. Ende"],
+                    text=[action["action"] + "<br>mögl. Effekt", action["action"] + "<br>vorraus. Ende"],
                     textposition="bottom center",
+                    hovertemplate=am_hover_template.format(details_action=wrap_hover_text(action["details_action"]),
+                                               start_date=action["startdate_action"].strftime("%d.%m.%Y"),
+                                               end_date=action["enddate_action"].strftime("%d.%m.%Y")),
+                    # TODO: Evaluate what is possible with this template and what is impossible.
                     )
                 for row_num, action in action_data.iterrows() if action["enddate_action"]
             ]
