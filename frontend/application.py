@@ -417,7 +417,7 @@ html.H1(children='''
             ''', id='header2'),
         daq.ToggleSwitch(
             id='county-country-switch',
-            label='Landkreis/Bundesland',
+            label='Bundesland/Landkreis',
             labelPosition='bottom'
         ),
         dcc.Graph(
