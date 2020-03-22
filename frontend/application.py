@@ -28,10 +28,10 @@ def read_action_data():
     df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
 
     # convert columns to datetime which contain datetime.
-    df["startdate_action"] = pd.to_datetime(df["startdate_action"])
-    df["enddate_action"] = pd.to_datetime(df["enddate_action"])
+    df["startdate_action"] = pd.to_datetime(df["startdate_action"], errors="coerce")
+    df["enddate_action"] = pd.to_datetime(df["enddate_action"], errors="coerce")
     df["enddate_action"] = df["enddate_action"].fillna(max(df["enddate_action"]))
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
     # Drop any row, which does not contain the bare minimum required for generating an action-marker.
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
