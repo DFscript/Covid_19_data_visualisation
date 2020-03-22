@@ -149,6 +149,20 @@ def create_timeline(df_cases, df_actions):
 
 
 df_cases = read_cases_data(acc_new=False)
+df_actions = read_action_data()
+relevant_countries1 = df_cases["country"].to_list()
+relevant_countries2 = df_actions["location"].to_list()
+
+relevant_countries = np.unique(relevant_countries1 + relevant_countries2)
+relevant_countries = [rel_c for rel_c in relevant_countries if rel_c != 'Berlin']
+relevant_countries = [rel_c.strip() for rel_c in relevant_countries]
+
+df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
+# separete several zielgruppen in the same entry (comma-separated)
+df_zielgruppe = itertools.chain.from_iterable([zg.split(",") for zg in df_zielgruppe])
+df_zielgruppe = [zg.strip() for zg in df_zielgruppe] # remove any whitespaces left.
+df_zielgruppe = list(set(df_zielgruppe)) # Remove any doubles.
+
 
 def is_entry_in_filter(filter, entry):
     if type(entry) is not str or len(entry) == 0:
@@ -343,7 +357,7 @@ def main_figure(country, zielgruppe, acc_new=False,log = False):
     df_events["action"] = "Winterferien"
     df_events["details_action"] = "Die regulären Winterferien des Bundeslandes."
     df_actions = pd.concat([df_actions, df_events])
-    df_cases, df_actions = filter_data_set(country=country, zielgruppe=zielgruppe,
+    df_cases, df_actions = filter_data_set(country=country, zielgruppe_filter=zielgruppe,
                                            acc_new=acc_new)  # filter on country level
 
     timeline = create_timeline(df_cases, df_actions)
@@ -362,21 +376,6 @@ def normalize_data():
     normalize the data with population
     :return:
     '''
-
-
-df_actions = read_action_data()
-relevant_countries1 = df_cases["country"].to_list()
-relevant_countries2 = df_actions["location"].to_list()
-
-relevant_countries = np.unique(relevant_countries1 + relevant_countries2)
-relevant_countries = [rel_c for rel_c in relevant_countries if rel_c != 'Berlin']
-relevant_countries = [rel_c.strip() for rel_c in relevant_countries]
-
-df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
-# separete several zielgruppen in the same entry (comma-separated)
-df_zielgruppe = itertools.chain.from_iterable([zg.split(",") for zg in df_zielgruppe])
-df_zielgruppe = [zg.strip() for zg in df_zielgruppe] # remove any whitespaces left.
-df_zielgruppe = list(set(df_zielgruppe)) # Remove any doubles.
 
 
 
