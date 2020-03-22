@@ -18,17 +18,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.scripts.config.serve_locally=True
 
 def read_cases_data():
-    '''
-    load the data
-    '''
-    df_cases = pd.read_excel(r'data-cases/cases.xlsx')
-
+    df_cases = pd.read_csv(r'data-cases/data_set.csv')
+    df_cases["timestamp"] = pd.to_datetime(df_cases["timestamp"])
     return df_cases
 
 
 def read_action_data():
 
-    df = pd.read_csv(os.path.normpath(r'data-actions/policymeasures - measures_taken.csv'))
+    df = pd.read_csv(r'data-actions/policymeasures - measures_taken.csv')
 
     # convert columns to datetime which contain datetime.
     df["startdate_action"] = pd.to_datetime(df["startdate_action"])
@@ -42,43 +39,42 @@ def read_action_data():
 
 
 def create_timeline(df_cases,df_actions):
-    earliest_date = min(min(df_cases['Time']),min(df_actions["startdate_action"]))
-    latest_date = max(max(df_cases['Time']),max(df_actions["enddate_action"]))
+    # df_cases.index = df_cases['timestamp']
+    df_cases.index = df_cases.index.tz_localize(None)
+    earliest_date = min(min(df_cases.index),min(df_actions["startdate_action"]))
+    latest_date = max(max(df_cases.index),max(df_actions["enddate_action"]))
     start = earliest_date
     end = latest_date
     date_list = pd.DataFrame(pd.date_range(start=start, end=end))
     date_list.columns = ['Time']
     return date_list
 
-def build_merged_dataset():
-    df_cases = read_cases_data()
-    df_actions = read_action_data()
+def filter_data_set_country_level(df_cases,country = 'Bayern'):
+    df_cases=df_cases[df_cases['country']==country]
+    df_cases = df_cases.groupby(['timestamp']).sum()
+    return df_cases
+
+def build_merged_dataset(df_cases,df_actions):
+    #main idea if a timestamp is missing it is addded here
     timeline = create_timeline(df_cases,df_actions)
-    print(type(df_cases['Time'][0]))
-    print(type(timeline['Time'][0]))
     timeline.index = timeline['Time']
-    df_cases.index = df_cases['Time']
-    merged_df = timeline.join(df_cases,how='left',lsuffix='_left', rsuffix='_right')
+    merged_df = timeline.join(df_cases,how='left')
     return merged_df
 
 
-def build_bar_chart_data():
-    df = build_merged_dataset()
-    # x = create_timeline() # the time line we want to show
+def build_bar_chart_data(df):
     bar_charts =[]
-    color = ['#B3B3B3','#171717']
-
-    for i,land in enumerate(['NRW','Bayern']):
-        x= df['Time_left']
-        y=df[land]
-        # y = [randrange(10) for i in range(len(x))] # replace with actual cases
-        data = go.Bar(
-            x=x,
-            y=y,
-            name = land,
-            marker_color = color[i]
-        )
-        bar_charts.append(data)
+    color = ['#474747','#B3B3B3']
+    # for i,land in enumerate(['NRW','Bayern']):
+    x= df['Time']
+    y = df['infected']
+    data = go.Bar(
+        x=x,
+        y=y,
+        name = 'Bayern',
+        marker_color = color[0]
+    )
+    bar_charts.append(data)
     return bar_charts
 
 am_hover_template = """
@@ -103,14 +99,11 @@ def wrap_hover_text(text):
 
 
 
-def build_am_data():
-    df = read_cases_data()
-    action_data = read_action_data()
-
+def build_am_data(df_cases,action_data):
     #action_data = action_data.reindex(list(range(1,len(action_data)+1)))
     action_data.index = list(range(1, len(action_data) + 1))
 
-    max_cases = max(df['NRW']) / len(action_data)
+    max_cases = max(df_cases['infected']) / len(action_data)
     action_data = action_data.sort_values("startdate_action")
 
     # grey lines at start of the action.
@@ -182,13 +175,11 @@ def build_am_data():
 
     return data
 
-def merge_figures():
+def merge_figures(bar_figure,am_figure):
     '''
     Merge the plots with add trace
     '''
     fig = go.Figure()
-    am_figure = build_am_data()
-    bar_figure = build_bar_chart_data()
     for am in am_figure:
         fig.add_trace(am)
     # for bar in bar_figure:
@@ -199,13 +190,6 @@ def merge_figures():
 
     fig.update_xaxes(tickangle=90)
     fig.update_layout(
-        # legend=dict(
-        #     x=0,
-        #     y=1,
-        #     traceorder="normal",
-        #     bordercolor="Black",
-        #     borderwidth=2
-        # ),
         showlegend=False,
         barmode='group',
         plot_bgcolor ='white',
@@ -217,6 +201,15 @@ def merge_figures():
     graph = dcc.Graph(id= 'Timeline', figure=fig)
     return graph
 
+def main_figure():
+    df_cases = read_cases_data()
+    df_cases = filter_data_set_country_level(df_cases) # filter on country level
+    df_actions = read_action_data()
+    df_merged = build_merged_dataset(df_cases,df_actions)
+    bar_charts = build_bar_chart_data(df_merged)
+    am_charts = build_am_data(df_cases,df_actions)
+    merged_figure = merge_figures(bar_charts,am_charts)
+    return merged_figure
 
 def normalize_data():
     '''
@@ -244,7 +237,7 @@ dropdown_landkreis = dcc.Dropdown(
     multi=True
     )
 
-plot = merge_figures()
+plot = main_figure()
 
 app.layout = html.Div(children=[
     html.H1(children='''
