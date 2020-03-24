@@ -199,25 +199,6 @@ def build_merged_dataset(df_cases, timeline):
     return merged_df
 
 
-def build_bar_chart_data(df, log):
-    bar_charts = []
-    color = ['#3a1261']
-    # for i,land in enumerate(['NRW','Bayern']): #option to implement multi select of countries
-    x = df['Time']
-    if log == True:
-        y = df['infected']
-    else:
-        y = np.log(df['infected'])
-    data = go.Bar(
-        x=x,
-        y=y,
-        name='Bayern',
-        marker_color=color[0]
-    )
-    bar_charts.append(data)
-    return bar_charts
-
-
 am_hover_template = """
 <b>%{{text}}</b><br>
 {details_action} <br><br>
@@ -240,13 +221,10 @@ def wrap_hover_text(text):
     return "<br>".join(fracs)
 
 
-def build_am_data(df_cases, action_data,log):
+def build_am_data(df_cases, action_data):
     # action_data = action_data.reindex(list(range(1,len(action_data)+1)))
     action_data.index = list(range(1, len(action_data) + 1))
     if not df_cases['infected'].empty:
-        if log == False:
-            max_cases = np.log(max(df_cases['infected'])) / len(action_data)
-        elif log == True:
            max_cases = max(df_cases['infected']) / len(action_data)
     else:
         max_cases = len(action_data)
@@ -322,7 +300,7 @@ def build_am_data(df_cases, action_data,log):
     return data
 
 
-def merge_figures(bar_figure, am_figure):
+def merge_figures(bar_figure, am_figure, log):
     '''
     Merge the plots with add trace
     '''
@@ -336,6 +314,8 @@ def merge_figures(bar_figure, am_figure):
     fig.add_trace(bar_figure[0])
 
     fig.update_xaxes(tickangle=90)
+    yaxis_type = 'log' if log else 'linear'
+    # yaxis_type = 'linear'
     fig.update_layout(
         showlegend=False,
         barmode='group',
@@ -344,7 +324,11 @@ def merge_figures(bar_figure, am_figure):
             # tickmode='linear',
             # range=[count_days-focus,count_days]
         ),  # range is the initial zoom on 16 days with the possibility to zoom out
-        yaxis=dict(title="Number of new cases"))
+        xaxis_type='date',
+        yaxis=dict(title="Number of new cases"),
+        yaxis_type=yaxis_type
+
+    )
     return fig
 
 
@@ -362,12 +346,12 @@ def main_figure(country, zielgruppe, acc_new=False,log = False):
 
     timeline = create_timeline(df_cases, df_actions)
     df_merged = build_merged_dataset(df_cases, timeline)
-    bar_charts = build_bar_chart_data(df_merged, log)
+    bar_charts = [go.Bar(x=df_merged['Time'], y=df_merged['infected'], name='Bayern', marker_color='#3a1261')]
     if not df_actions.empty:
-        am_charts = build_am_data(df_cases, df_actions,log)
+        am_charts = build_am_data(df_cases, df_actions)
     else:
         am_charts = []
-    figure = merge_figures(bar_charts, am_charts)
+    figure = merge_figures(bar_charts, am_charts, log)
     return figure
 
 
@@ -544,8 +528,10 @@ dropdown_zielgruppe = dcc.Dropdown(
     multi=True
 )
 
-select_all = dcc.Checklist(id='select-all',
-                           options=[{'label': 'Select All', 'value': "1"}])
+check_list = dcc.Checklist(id='select-all', options=[{'label': 'Select All', 'value': 'select_all'},
+                                                     {'label': 'Accumulate', 'value': 'accumulate'},
+                                                     {'label': 'Log', 'value': 'log'}],
+                           value=[])
 
 fig = main_figure(country="Bayern", zielgruppe="Versammlungen")
 plot = dcc.Graph(id='Timeline', figure=fig)
@@ -588,17 +574,14 @@ app.layout = html.Div(id="container", children=[
     ]),
 
     html.Div(id="container_right", children=[
-
         html.H1(children='''
             Timeline of Events in Germany
             ''', id='header'),
         dropdown_bundesland,
         dropdown_zielgruppe,
-        select_all,
-        plot,html.Div(children =[
-        accumulated_new_switch,log_lin_switch])
-
-    ]),
+        check_list,
+        plot
+    ])
 ])
 
 
@@ -626,16 +609,17 @@ def update_output(value):
               [Input("bundesland", "value"),
                Input("zielgruppe", "value"),
                Input("select-all", "value"),
-               Input("zielgruppe", "options"),
-               Input("accumulated_new_switch", "value"),
-               Input("log_lin_switch","value")
+               Input("zielgruppe", "options")
                ])
-def filter_plot(bundesland, zielgruppe, select_all, all_zielgruppe, acc_new,log):
-    if select_all == ["1"]:
+def filter_plot(bundesland, zielgruppe, check_list, all_zielgruppe):
+    select_all = 'select_all' in check_list
+    acc_new = 'accumulate' in check_list
+    log = 'log' in check_list
+    if select_all:
         all_zielgruppe = [i['value'] for i in all_zielgruppe]
-        figure = main_figure(country=bundesland, zielgruppe=all_zielgruppe, acc_new=acc_new,log =log)
+        figure = main_figure(country=bundesland, zielgruppe=all_zielgruppe, acc_new=acc_new, log=log)
     else:
-        figure = main_figure(country=bundesland, zielgruppe=zielgruppe, acc_new=acc_new,log=log)
+        figure = main_figure(country=bundesland, zielgruppe=zielgruppe, acc_new=acc_new, log=log)
 
     return figure
 
