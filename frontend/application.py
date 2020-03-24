@@ -559,7 +559,7 @@ app.layout = html.Div(id="container", children=[
                         className='info-icon',
                     ),
         html.H1(children='''
-            Spatial overview
+            Spatial Overview
             ''', id='header2'),
         daq.ToggleSwitch(
             id='county-country-switch',
