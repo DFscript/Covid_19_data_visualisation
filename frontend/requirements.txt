@@ -6,3 +6,4 @@ dash-table-experiments
 dash-daq
 plotly
 pandas
+xlrd
