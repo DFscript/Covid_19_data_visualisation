@@ -546,7 +546,7 @@ dropdown_zielgruppe = dcc.Dropdown(
 check_list = dcc.Checklist(id='checkboxes', options=[{'label': 'Select All', 'value': 'select_all'},
                                                      {'label': 'Accumulate', 'value': 'accumulate'},
                                                      {'label': 'Log', 'value': 'log'},
-                                                     {'label': 'Per 100.000','value':'per 100.000'}],
+                                                     {'label': 'Per 100.000','value':'normalized'}],
                            value=[])
 
 fig = main_figure(country="Bayern", zielgruppe="Versammlungen")
