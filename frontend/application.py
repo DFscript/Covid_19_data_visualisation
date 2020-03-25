@@ -81,6 +81,16 @@ def build_modal_info_overlay(id, side, content):
 
 ZG_WINTER_HOLYDAYS = "Winterferien (regulär)"
 
+def normalize_data(values,inhabitants):
+    '''
+    normalize the data with population
+    '''
+    factor = 100000
+    denominator= inhabitants / factor
+    values['infected'] = values['infected'].apply(lambda x: x/ denominator, 0)
+    return values
+
+
 def read_cases_data(acc_new):
     if acc_new == False:
         df_cases = pd.read_csv(r'../data-cases/data_set.csv')
@@ -123,6 +133,9 @@ def read_action_data():
     df = df.dropna(subset=["startdate_action", "enddate_action", "geographic_level", "location", "action"], how="any")
     return df
 
+def read_inhabitants_per_state_data():
+    df = pd.read_excel(r'../data-cases/inhabitants_per_state.xlsx')
+    return df
 
 def create_timeline(df_cases, df_actions):
     # df_cases.index = df_cases['timestamp']
@@ -172,11 +185,15 @@ def is_entry_in_filter(filter, entry):
     return number_of_matching_entries > 0
 
 
-def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe_filter = 'Versammlungen', acc_new=False):
+def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe_filter = 'Versammlungen', acc_new=False, norm = False):
     df_cases = read_cases_data(acc_new=acc_new)
     df_actions = read_action_data()
+    df_inhabitants_per_state = read_inhabitants_per_state_data()
+    inhabitants = df_inhabitants_per_state[df_inhabitants_per_state['state'] == country]['inhabitants']
     df_cases=df_cases[df_cases['country']==country]
     df_cases = df_cases.groupby(['timestamp']).sum().tz_localize(None)
+    if norm == True:
+        df_cases = normalize_data(df_cases,inhabitants)
 
     df_actions = df_actions[df_actions['location'] == country]
     if type(zielgruppe_filter) !=list:
@@ -196,6 +213,7 @@ def build_merged_dataset(df_cases, timeline):
     # main idea if a timestamp is missing it is addded here
     timeline.index = timeline['Time']
     merged_df = timeline.join(df_cases, how='left')
+    # print(merged_df)
     return merged_df
 
 
@@ -300,7 +318,7 @@ def build_am_data(df_cases, action_data):
     return data
 
 
-def merge_figures(bar_figure, am_figure, log):
+def merge_figures(bar_figure, am_figure, log, ):
     '''
     Merge the plots with add trace
     '''
@@ -315,7 +333,8 @@ def merge_figures(bar_figure, am_figure, log):
 
     fig.update_xaxes(tickangle=90)
     yaxis_type = 'log' if log else 'linear'
-    # yaxis_type = 'linear'
+
+
     fig.update_layout(
         showlegend=False,
         barmode='group',
@@ -332,7 +351,7 @@ def merge_figures(bar_figure, am_figure, log):
     return fig
 
 
-def main_figure(country, zielgruppe, acc_new=False,log = False):
+def main_figure(country, zielgruppe, acc_new=False,log = False,norm =False):
     df_cases = read_cases_data(acc_new=acc_new)
     df_actions = read_action_data()
     df_events = read_event_data()
@@ -342,8 +361,7 @@ def main_figure(country, zielgruppe, acc_new=False,log = False):
     df_events["details_action"] = "Die regulären Winterferien des Bundeslandes."
     df_actions = pd.concat([df_actions, df_events])
     df_cases, df_actions = filter_data_set(country=country, zielgruppe_filter=zielgruppe,
-                                           acc_new=acc_new)  # filter on country level
-
+                                           acc_new=acc_new,norm=norm)  # filter on country level
     timeline = create_timeline(df_cases, df_actions)
     df_merged = build_merged_dataset(df_cases, timeline)
     bar_charts = [go.Bar(x=df_merged['Time'], y=df_merged['infected'], name='Bayern', marker_color='#3a1261')]
@@ -354,12 +372,6 @@ def main_figure(country, zielgruppe, acc_new=False,log = False):
     figure = merge_figures(bar_charts, am_charts, log)
     return figure
 
-
-def normalize_data():
-    '''
-    normalize the data with population
-    :return:
-    '''
 
 
 
@@ -380,7 +392,7 @@ def create_figure(bubble_for_each_county):
         county_id = props['IdLandkreis']
 
         if county_id not in county_to_middles:
-            print("We have no geocoords for:", county_id, "therefore throwing out")
+            # print("We have no geocoords for:", county_id, "therefore throwing out")
             elements_to_remove.append(element)
         else:
             case_list.append(props)
@@ -449,7 +461,7 @@ def create_figure(bubble_for_each_county):
         # Needed to have time slider values sorted
         df = df.sort_values(by='timestamp')
 
-        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", size_max=60, mapbox_style='open-street-map',
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", size_max=40, mapbox_style='open-street-map',
                                 animation_frame='timestamp', height=800, hover_data=['country', 'infected', 'deaths'],
                                 custom_data=['country'], center=germany_center, zoom=zoom)
 
@@ -528,26 +540,18 @@ dropdown_zielgruppe = dcc.Dropdown(
     multi=True
 )
 
-check_list = dcc.Checklist(id='select-all', options=[{'label': 'Select All', 'value': 'select_all'},
+
+
+
+check_list = dcc.Checklist(id='checkboxes', options=[{'label': 'Select All', 'value': 'select_all'},
                                                      {'label': 'Accumulate', 'value': 'accumulate'},
-                                                     {'label': 'Log', 'value': 'log'}],
+                                                     {'label': 'Log', 'value': 'log'},
+                                                     {'label': 'Per 100.000','value':'normalized'}],
                            value=[])
 
 fig = main_figure(country="Bayern", zielgruppe="Versammlungen")
 plot = dcc.Graph(id='Timeline', figure=fig)
 
-accumulated_new_switch = daq.ToggleSwitch(
-    id='accumulated_new_switch',
-    label='new infected / accumulated',
-    labelPosition='bottom'
-)
-
-log_lin_switch = daq.ToggleSwitch(
-    id='log_lin_switch',
-    label='log / linear',
-    labelPosition='bottom',
-    value = False
-)
 
 app.layout = html.Div(id="container", children=[
     html.Div(id="container_left", children=[
@@ -608,18 +612,19 @@ def update_output(value):
 @app.callback(Output("Timeline", "figure"),
               [Input("bundesland", "value"),
                Input("zielgruppe", "value"),
-               Input("select-all", "value"),
-               Input("zielgruppe", "options")
+               Input("checkboxes", "value"),
+               Input("zielgruppe", "options"),
                ])
 def filter_plot(bundesland, zielgruppe, check_list, all_zielgruppe):
     select_all = 'select_all' in check_list
     acc_new = 'accumulate' in check_list
     log = 'log' in check_list
+    norm ='normalized' in check_list
     if select_all:
         all_zielgruppe = [i['value'] for i in all_zielgruppe]
-        figure = main_figure(country=bundesland, zielgruppe=all_zielgruppe, acc_new=acc_new, log=log)
+        figure = main_figure(country=bundesland, zielgruppe=all_zielgruppe, acc_new=acc_new, log=log, norm=norm)
     else:
-        figure = main_figure(country=bundesland, zielgruppe=zielgruppe, acc_new=acc_new, log=log)
+        figure = main_figure(country=bundesland, zielgruppe=zielgruppe, acc_new=acc_new, log=log, norm=norm)
 
     return figure
 
