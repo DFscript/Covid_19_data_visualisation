@@ -7,4 +7,4 @@ RUN pip install -r /requirements_only_server.txt
  
 EXPOSE 8050
 WORKDIR /repo/frontend
-CMD ["gunicorn", "--workers=6", "--bind=0.0.0.0:8050", "--reload", "application:server"]
+CMD ["gunicorn", "--keyfile=/letsencrypt/live/causality-vs-corona.de/privkey.pem", "--certfile=/letsencrypt/live/causality-vs-corona.de/cert.pem", "--workers=6", "--bind=0.0.0.0:8050", "--reload", "application:server"]

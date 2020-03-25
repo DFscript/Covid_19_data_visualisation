@@ -9,5 +9,7 @@ sudo docker run -v "$(dirname "$(pwd)"):/repo" -p 8050:8050 frontend
 
 As Server:
 sudo docker build -t frontend:latest -f ./DockerfileServer .
-sudo docker run -v "$(dirname "$(pwd)"):/repo" -p 80:8050 frontend
+sudo docker run -v "/etc/letsencrypt/live/causality-vs-corona.de:/cert" -v "$(dirname "$(pwd)"):/repo" -p 8050:8050 frontend
 
+Renew certificate via
+sudo certbot renew
