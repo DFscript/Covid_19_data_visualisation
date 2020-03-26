@@ -435,12 +435,12 @@ def create_figure(bubble_for_each_county):
     # df['timestamp'] = pd.to_datetime(df['timestamp'])
     # Make it so that ('county', 'timestamp') are unique and sum up deaths and infected while doing so
     df = df.groupby(by=['timestamp', 'county', 'lat', 'lon', 'country'])[['deaths', 'infected']].sum().reset_index(). \
-        sort_values(by=['county', 'timestamp'], ascending=[True, True])
-    # df.to_csv('data_set.csv', index=False)
+        sort_values(by=['country', 'timestamp'], ascending=[True, True])
+    #df.to_csv('data_set.csv', index=False)
 
     df[['deaths', 'infected']] = df.groupby(by=['county'])[['deaths', 'infected']].cumsum()
 
-    # df.to_csv('data_set_accumulated.csv', index=False)
+    #df.to_csv('data_set_accumulated.csv', index=False)
 
     df = df.sort_values(by=['county', 'timestamp'], ascending=[True, False])
 
