@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 import itertools
 import json
-import itertools
+from textwrap import dedent
 
 import dash
-from functools import partial
-import plotly.graph_objects as go
 import dash_core_components as dcc
 import dash_daq as daq
-import numpy as np
 import dash_html_components as html
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from dash.dependencies import Input
 from dash.dependencies import Output
-from textwrap import dedent
+
 help_text = """
 # Willkommen bei Causality vc. Corona.
 
@@ -163,12 +162,7 @@ def create_timeline(df_cases, df_actions):
 
 df_cases = read_cases_data(acc_new=False)
 df_actions = read_action_data()
-relevant_countries1 = df_cases["country"].to_list()
-relevant_countries2 = df_actions["location"].to_list()
-
-relevant_countries = np.unique(relevant_countries1 + relevant_countries2)
-relevant_countries = [rel_c for rel_c in relevant_countries if rel_c != 'Berlin']
-relevant_countries = [rel_c.strip() for rel_c in relevant_countries]
+relevant_countries = df_cases["country"].unique().tolist()
 
 df_zielgruppe =  df_actions["Zielgruppe"].dropna().unique()
 # separete several zielgruppen in the same entry (comma-separated)
@@ -197,7 +191,7 @@ def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',
 
     df_actions = df_actions[df_actions['location'] == country]
     if type(zielgruppe_filter) !=list:
-        zielgruppe = [zielgruppe_filter]
+        zielgruppe_filter = [zielgruppe_filter]
 
     # Ok, this is a little involved: We need to know whether any of the zielgruppen for a given entry (encoded in
     # a single, comma-separated string) are in the zielgruppe_filter. Therefore, we split the entry_zielgruppen and
@@ -205,7 +199,7 @@ def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',
     # zielgruppe_filter. If none are in the filter, the list comprehension returns an empty list. If at least one
     # of the zielgruppen of the entry is in the filter, the list is not empty and we use that entry (OR, according to
     # issue #14).
-    df_actions = df_actions[df_actions["Zielgruppe"].map(partial(is_entry_in_filter, zielgruppe_filter))]
+    df_actions = df_actions[df_actions["Zielgruppe"].str.split(',', expand=True).isin(zielgruppe_filter).any(axis=1)]
     return df_cases,df_actions
 
 
@@ -642,4 +636,4 @@ def toggle_modal(n_show, n_close):
 
 if __name__ == '__main__':
     print('reload')
-    app.run_server(host="0.0.0.0", debug=True)
+    app.run_server(host="0.0.0.0", debug=False)
