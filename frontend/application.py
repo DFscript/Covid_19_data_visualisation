@@ -171,14 +171,6 @@ df_zielgruppe = [zg.strip() for zg in df_zielgruppe] # remove any whitespaces le
 df_zielgruppe = list(set(df_zielgruppe)) # Remove any doubles.
 
 
-def is_entry_in_filter(filter, entry):
-    if type(entry) is not str or len(entry) == 0:
-        return False
-    zielgruppen_entry = [zg.strip() for zg in entry.split(",")]
-    number_of_matching_entries = sum([1 for zg in zielgruppen_entry if zg in filter])
-    return number_of_matching_entries > 0
-
-
 def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe_filter = 'Versammlungen', acc_new=False, norm = False):
     df_cases = read_cases_data(acc_new=acc_new)
     df_actions = read_action_data()
