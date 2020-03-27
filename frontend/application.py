@@ -442,7 +442,8 @@ def create_figure(bubble_for_each_county):
 
     # Determined with https://gps-coordinates.org/germany-latitude.php
     germany_center = {'lat': 51.133481, 'lon': 10.018343}
-    zoom = 5
+    zoom = 4.9
+    map_style = 'stamen-toner'
 
     if not bubble_for_each_county:
         df = df.groupby(by=['country', 'lat', 'lon', 'timestamp'])[['infected', 'deaths']].sum().reset_index()
@@ -454,7 +455,7 @@ def create_figure(bubble_for_each_county):
         # Needed to have time slider values sorted
         df = df.sort_values(by='timestamp')
 
-        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", size_max=40, mapbox_style='open-street-map',
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", size_max=40, mapbox_style=map_style,
                                 animation_frame='timestamp', height=800, hover_data=['country', 'infected', 'deaths'],
                                 custom_data=['country'], center=germany_center, zoom=zoom)
 
@@ -462,7 +463,7 @@ def create_figure(bubble_for_each_county):
         # Needed to have time slider values sorted
         df = df.sort_values(by='timestamp')
 
-        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style='open-street-map',
+        fig = px.scatter_mapbox(df, lat='lat', lon='lon', size="infected", mapbox_style=map_style,
                                 animation_frame='timestamp', height=800, hover_data=['country', 'county', 'infected',
                                                                                      'deaths'],
                                 custom_data=['country', 'county'], center=germany_center, zoom=zoom)
@@ -635,4 +636,4 @@ def toggle_modal(n_show, n_close):
 
 if __name__ == '__main__':
     print('reload')
-    app.run_server(host="0.0.0.0", debug=False)
+    app.run_server(host="0.0.0.0", debug=True)
