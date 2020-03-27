@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import itertools
 import json
+from datetime import datetime
 from textwrap import dedent
 
 import dash
@@ -171,7 +172,8 @@ df_zielgruppe = [zg.strip() for zg in df_zielgruppe] # remove any whitespaces le
 df_zielgruppe = list(set(df_zielgruppe)) # Remove any doubles.
 
 
-def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',zielgruppe_filter = 'Versammlungen', acc_new=False, norm = False):
+def filter_data_set(df_cases=df_cases, df_actions=df_actions, country='Bayern', zielgruppe_filter='Versammlungen',
+                    acc_new=False, norm=False):
     df_cases = read_cases_data(acc_new=acc_new)
     df_actions = read_action_data()
     df_inhabitants_per_state = read_inhabitants_per_state_data()
@@ -182,7 +184,7 @@ def filter_data_set(df_cases= df_cases,df_actions=df_actions,country = 'Bayern',
         df_cases = normalize_data(df_cases,inhabitants)
 
     df_actions = df_actions[df_actions['location'] == country]
-    if type(zielgruppe_filter) !=list:
+    if type(zielgruppe_filter) != list:
         zielgruppe_filter = [zielgruppe_filter]
 
     # Ok, this is a little involved: We need to know whether any of the zielgruppen for a given entry (encoded in
@@ -404,11 +406,16 @@ def create_figure(bubble_for_each_county):
 
     unique_days = df_uncompleted['timestamp'].unique()
     unique_days.sort()
+    filled_unique_days = pd.date_range(unique_days[0], unique_days[-1])
+    # Back to old format to not break anything
+    # Why does filled_unique_days.map(lambda x: (x.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")) not work?
+    filled_unique_days = filled_unique_days.map(lambda x: (x.strftime('%Y-%m-%dT%H:%M:%S.%f')))
+    filled_unique_days = filled_unique_days.map(lambda x: x[:-3] + "Z")
     unique_counties = df_uncompleted['county'].unique()
     unique_counties.sort()
 
     full_matrix = []
-    for day, county in itertools.product(unique_days, unique_counties):
+    for day, county in itertools.product(filled_unique_days, unique_counties):
         if (county, day) in county_day_map:
             full_matrix.append(county_day_map[(county, day)])
         else:
@@ -422,11 +429,11 @@ def create_figure(bubble_for_each_county):
     # Make it so that ('county', 'timestamp') are unique and sum up deaths and infected while doing so
     df = df.groupby(by=['timestamp', 'county', 'lat', 'lon', 'country'])[['deaths', 'infected']].sum().reset_index(). \
         sort_values(by=['country', 'timestamp'], ascending=[True, True])
-    #df.to_csv('data_set.csv', index=False)
+    df.to_csv('data_set.csv', index=False)
 
     df[['deaths', 'infected']] = df.groupby(by=['county'])[['deaths', 'infected']].cumsum()
 
-    #df.to_csv('data_set_accumulated.csv', index=False)
+    df.to_csv('data_set_accumulated.csv', index=False)
 
     df = df.sort_values(by=['county', 'timestamp'], ascending=[True, False])
 
